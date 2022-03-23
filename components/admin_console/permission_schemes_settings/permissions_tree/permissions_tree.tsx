@@ -14,6 +14,8 @@ import PermissionGroup from '../permission_group.jsx';
 import EditPostTimeLimitButton from '../edit_post_time_limit_button';
 import EditPostTimeLimitModal from '../edit_post_time_limit_modal';
 
+import {LicenseSkus} from 'mattermost-redux/types/general';
+
 import {AdditionalValues, Group} from './types';
 
 type Props = {
@@ -124,6 +126,9 @@ export default class PermissionsTree extends React.PureComponent<Props, State> {
                     Permissions.PLAYBOOK_PUBLIC_MANAGE_MEMBERS,
                     Permissions.PLAYBOOK_PUBLIC_MAKE_PRIVATE,
                 ],
+                isVisible: (license) => {
+                    return license !== undefined && license.SkuShortName === LicenseSkus.Enterprise;
+                },
             },
             {
                 id: 'playbook_private',
@@ -133,12 +138,18 @@ export default class PermissionsTree extends React.PureComponent<Props, State> {
                     Permissions.PLAYBOOK_PRIVATE_MANAGE_MEMBERS,
                     Permissions.PLAYBOOK_PRIVATE_MAKE_PUBLIC,
                 ],
+                isVisible: (license) => {
+                    return license !== undefined && license.SkuShortName === LicenseSkus.Enterprise;
+                },
             },
             {
                 id: 'runs',
                 permissions: [
                     Permissions.RUN_CREATE,
                 ],
+                isVisible: (license) => {
+                    return license !== undefined && license.SkuShortName === LicenseSkus.Enterprise;
+                },
             },
             {
                 id: 'posts',
@@ -243,6 +254,14 @@ export default class PermissionsTree extends React.PureComponent<Props, State> {
         if (!this.props.customGroupsEnabled) {
             customGroupsGroup?.permissions.pop();
         }
+
+        const visibilityFilteredGroups = this.groups.filter((value) => {
+            if (value.isVisible) {
+                return value.isVisible(license, config, scope);
+            }
+            return true;
+        });
+        this.groups = visibilityFilteredGroups;
     }
 
     openPostTimeLimitModal = () => {
