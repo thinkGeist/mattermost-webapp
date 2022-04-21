@@ -186,7 +186,7 @@ export default class FileSearchResultItem extends React.PureComponent<Props, Sta
                     >
                         <a
                             className='action-icon download-icon'
-                            href={`/api/v4/files/${fileInfo.id}?download=1`}
+                            href={`${Client4.getBaseRoute()}/files/${fileInfo.id}?download=1`}
                             onClick={this.stopPropagation}
                         >
                             <i className='icon icon-download-outline'/>

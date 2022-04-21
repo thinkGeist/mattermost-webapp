@@ -4239,12 +4239,12 @@ const AdminDefinition = {
                 name_default: 'GitLab',
                 onConfigLoad: (config) => {
                     const newState = {};
-                    newState['GitLabSettings.Url'] = config.GitLabSettings.UserAPIEndpoint.replace('/api/v4/user', '');
+                    newState['GitLabSettings.Url'] = config.GitLabSettings.UserAPIEndpoint.replace(`${Client4.getBaseRoute()}/user`, '');
                     return newState;
                 },
                 onConfigSave: (config) => {
                     const newConfig = {...config};
-                    newConfig.GitLabSettings.UserAPIEndpoint = config.GitLabSettings.Url.replace(/\/$/, '') + '/api/v4/user';
+                    newConfig.GitLabSettings.UserAPIEndpoint = config.GitLabSettings.Url.replace(/\/$/, '') + `${Client4.getBaseRoute()}/user`;
                     return newConfig;
                 },
                 settings: [
@@ -4307,7 +4307,7 @@ const AdminDefinition = {
                         label_default: 'User API Endpoint:',
                         dynamic_value: (value, config, state) => {
                             if (state['GitLabSettings.Url']) {
-                                return state['GitLabSettings.Url'].replace(/\/$/, '') + '/api/v4/user';
+                                return state['GitLabSettings.Url'].replace(/\/$/, '') + `${Client4.getBaseRoute()}/user`;
                             }
                             return '';
                         },
@@ -4382,7 +4382,7 @@ const AdminDefinition = {
                         newState.oauthType = Constants.GOOGLE_SERVICE;
                     }
 
-                    newState['GitLabSettings.Url'] = config.GitLabSettings.UserAPIEndpoint.replace('/api/v4/user', '');
+                    newState['GitLabSettings.Url'] = config.GitLabSettings.UserAPIEndpoint.replace(`${Client4.getBaseRoute()}/user`, '');
 
                     return newState;
                 },
@@ -4397,7 +4397,7 @@ const AdminDefinition = {
                     newConfig.Office365Settings.Enable = false;
                     newConfig.GoogleSettings.Enable = false;
                     newConfig.OpenIdSettings.Enable = false;
-                    newConfig.GitLabSettings.UserAPIEndpoint = config.GitLabSettings.Url.replace(/\/$/, '') + '/api/v4/user';
+                    newConfig.GitLabSettings.UserAPIEndpoint = config.GitLabSettings.Url.replace(/\/$/, '') + `${Client4.getBaseRoute()}/user`;
 
                     if (config.oauthType === Constants.GITLAB_SERVICE) {
                         newConfig.GitLabSettings.Enable = true;
@@ -4505,7 +4505,7 @@ const AdminDefinition = {
                         label_default: 'User API Endpoint:',
                         dynamic_value: (value, config, state) => {
                             if (state['GitLabSettings.Url']) {
-                                return state['GitLabSettings.Url'].replace(/\/$/, '') + '/api/v4/user';
+                                return state['GitLabSettings.Url'].replace(/\/$/, '') + `${Client4.getBaseRoute()}/user`;
                             }
                             return '';
                         },
@@ -4694,7 +4694,7 @@ const AdminDefinition = {
                         newState.openidType = Constants.OPENID_SERVICE;
                     }
                     if (config.GitLabSettings.UserAPIEndpoint) {
-                        newState['GitLabSettings.Url'] = config.GitLabSettings.UserAPIEndpoint.replace('/api/v4/user', '');
+                        newState['GitLabSettings.Url'] = config.GitLabSettings.UserAPIEndpoint.replace(`${Client4.getBaseRoute()}/user`, '');
                     } else if (config.GitLabSettings.DiscoveryEndpoint) {
                         newState['GitLabSettings.Url'] = config.GitLabSettings.DiscoveryEndpoint.replace('/.well-known/openid-configuration', '');
                     }
