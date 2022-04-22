@@ -81,11 +81,11 @@ const WAIT_FOR_REDIRECT_TIME = 2000 - START_TRANSITIONING_OUT;
 
 export type Actions = {
     createTeam: (team: Team) => ActionResult;
-    checkIfTeamExists: (teamName: string) => ActionResult;
     getProfiles: (page: number, perPage: number, options: Record<string, any>) => ActionResult;
 }
+type historyPusher = {history: {push: RouterProps['history']['push']}};
 
-type Props = RouterProps & {
+type Props = historyPusher & {
     handleForm(form: Form): void;
     background?: JSX.Element | string;
     actions: Actions;
@@ -149,7 +149,7 @@ export default function PreparingWorkspace(props: Props) {
     const showOnMountTimeout = useRef<NodeJS.Timeout>();
 
     const stepOrder = [
-        isSelfHosted && WizardSteps.Organization,
+        !inferredTeam && isSelfHosted && WizardSteps.Organization,
         isSelfHosted && isConfigSiteUrlDefault && WizardSteps.Url,
         WizardSteps.UseCase,
         pluginsEnabled && WizardSteps.Plugins,
@@ -525,7 +525,7 @@ export default function PreparingWorkspace(props: Props) {
                 transitionSpeed={Animations.PAGE_SLIDE}
             />
             <div className='PreparingWorkspacePageContainer'>
-                {isSelfHosted && (
+                {!inferredTeam && isSelfHosted && (
                     <Organization
                         onPageView={onPageViews[WizardSteps.Organization]}
                         show={shouldShowPage(WizardSteps.Organization)}
@@ -685,7 +685,7 @@ export default function PreparingWorkspace(props: Props) {
                     step={currentStep}
                     transitionDirection={getTransitionDirectionMultiStep([WizardSteps.Channel, WizardSteps.InviteMembers])}
                     channelName={form.channel.name || 'Channel name'}
-                    teamName={isSelfHosted ? form.organization || 'Team name' : inferredTeam?.display_name || 'Team name'}
+                    teamName={(!inferredTeam && isSelfHosted) ? form.organization || 'Team name' : inferredTeam?.display_name || 'Team name'}
                 />
                 <LaunchingWorkspace
                     onPageView={onPageViews[WizardSteps.LaunchingWorkspace]}
