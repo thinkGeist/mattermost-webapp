@@ -38,6 +38,7 @@ export type Actions = {
     unsetEditingPost: () => void;
     openModal: (input: ModalData<DialogProps>) => void;
     scrollPostListToBottom: () => void;
+    showPostEditTimeoutToast: (message: string) => void;
 }
 
 export type Props = {
@@ -53,6 +54,7 @@ export type Props = {
     };
     maxPostSize: number;
     useChannelMentions: boolean;
+    postEditTimeLimit: number;
     editingPost: {
         post: Post | null;
         postId?: string;
@@ -79,7 +81,7 @@ const {KeyCodes} = Constants;
 const TOP_OFFSET = 0;
 const RIGHT_OFFSET = 10;
 
-const EditPost = ({editingPost, actions, canEditPost, config, ...rest}: Props): JSX.Element | null => {
+const EditPost = ({editingPost, actions, canEditPost, postEditTimeLimit, config, ...rest}: Props): JSX.Element | null => {
     const [editText, setEditText] = useState<string>(
         editingPost?.post?.message_source || editingPost?.post?.message || '',
     );
@@ -221,6 +223,21 @@ const EditPost = ({editingPost, actions, canEditPost, config, ...rest}: Props): 
             };
 
             actions.openModal(deletePostModalData);
+            return;
+        }
+
+        // Final frontend check that we haven't passed the update window
+
+        const milliseconds = 1000;
+        const timeLeft = (editingPost.post.create_at + (postEditTimeLimit * milliseconds)) - Utils.getTimestamp();
+
+        if (timeLeft <= 0) {
+            const updateTimeoutMessage = formatMessage({
+                id: 'post_info.edit.disabled',
+                defaultMessage: 'Editing is only allowed for {maxSeconds} seconds.',
+            }, {maxSeconds: postEditTimeLimit});
+            actions.showPostEditTimeoutToast(updateTimeoutMessage);
+            handleRefocusAndExit(editingPost.refocusId || null);
             return;
         }
 

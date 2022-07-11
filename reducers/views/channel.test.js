@@ -17,6 +17,7 @@ describe('Reducers.channel', () => {
         lastGetPosts: {},
         toastStatus: false,
         channelPrefetchStatus: {},
+        warningToast: {},
     };
 
     test('Initial state', () => {

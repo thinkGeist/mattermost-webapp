@@ -46,6 +46,7 @@ describe('components/dot_menu/DotMenu on mobile view', () => {
                 setThreadFollow: jest.fn(),
             },
             canEdit: false,
+            hasEditPermission: false,
             canDelete: false,
             appBindings: [],
             pluginMenuItems: [],

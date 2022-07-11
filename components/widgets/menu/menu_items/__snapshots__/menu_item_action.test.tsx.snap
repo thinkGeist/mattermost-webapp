@@ -1,0 +1,68 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`components/MenuItemAction should match snapshot 1`] = `
+<OverlayTrigger
+  defaultOverlayShown={false}
+  delayShow={400}
+  disabled={true}
+  overlay={
+    <Tooltip
+      id="disabled-tooltip"
+    />
+  }
+  placement="left"
+  trigger={
+    Array [
+      "hover",
+      "focus",
+    ]
+  }
+>
+  <button
+    className="style--none"
+    onClick={[MockFunction]}
+  >
+    <span
+      className="MenuItem__primary-text"
+    >
+      Whatever
+    </span>
+  </button>
+</OverlayTrigger>
+`;
+
+exports[`components/MenuItemAction should match snapshot with extra text 1`] = `
+<OverlayTrigger
+  defaultOverlayShown={false}
+  delayShow={400}
+  disabled={true}
+  overlay={
+    <Tooltip
+      id="disabled-tooltip"
+    />
+  }
+  placement="left"
+  trigger={
+    Array [
+      "hover",
+      "focus",
+    ]
+  }
+>
+  <button
+    className="style--none MenuItem__with-help"
+    onClick={[MockFunction]}
+  >
+    <span
+      className="MenuItem__primary-text"
+    >
+      Whatever
+    </span>
+    <span
+      className="MenuItem__help-text"
+    >
+      Extra Text
+    </span>
+  </button>
+</OverlayTrigger>
+`;

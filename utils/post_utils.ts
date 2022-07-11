@@ -112,6 +112,26 @@ export function canEditPost(
     return canEditPostRedux(state, config, license, channel?.team_id ?? '', channel?.id ?? '', userId ?? '', post);
 }
 
+export function hasEditPermission(
+    state: GlobalState,
+    post: Post,
+    channelId: string,
+    teamId: string,
+): boolean {
+    if (!post || isSystemMessage(post)) {
+        return false;
+    }
+
+    const isOwner = isPostOwner(state, post);
+    let hasPermission = true;
+
+    const permission = isOwner ? Permissions.EDIT_POST : Permissions.EDIT_OTHERS_POSTS;
+
+    hasPermission = haveIChannelPermission(state, teamId, channelId, permission);
+
+    return hasPermission;
+}
+
 export function shouldShowDotMenu(state: GlobalState, post: Post, channel: Channel): boolean {
     if (post && post.state === Posts.POST_DELETED) {
         return false;

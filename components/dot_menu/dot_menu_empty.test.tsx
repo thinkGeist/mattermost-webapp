@@ -46,6 +46,7 @@ describe('components/dot_menu/DotMenu returning empty ("")', () => {
                 setThreadFollow: jest.fn(),
             },
             canEdit: false,
+            hasEditPermission: false,
             canDelete: false,
             appBindings: [],
             pluginMenuItems: [],

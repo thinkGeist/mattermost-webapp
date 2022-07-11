@@ -38,6 +38,7 @@ describe('components/dot_menu/DotMenu', () => {
             setThreadFollow: jest.fn(),
         },
         canEdit: false,
+        hasEditPermission: false,
         canDelete: false,
         isReadOnly: false,
         teamId: 'team_id_1',
@@ -53,6 +54,7 @@ describe('components/dot_menu/DotMenu', () => {
         const props = {
             ...baseProps,
             canEdit: true,
+            hasEditPermission: true,
         };
         const wrapper = shallowWithIntl(
             <DotMenu {...props}/>,
@@ -61,6 +63,7 @@ describe('components/dot_menu/DotMenu', () => {
         expect(wrapper).toMatchSnapshot();
 
         const instance = wrapper.instance();
+        expect(wrapper.find(`#edit_post_${baseProps.post.id}`).prop('disabled')).toBe(false);
         const setStateMock = jest.fn();
         instance.setState = setStateMock;
         (wrapper.instance() as DotMenuClass).handleEditDisable();
@@ -70,6 +73,7 @@ describe('components/dot_menu/DotMenu', () => {
     test('should match snapshot, canDelete', () => {
         const props = {
             ...baseProps,
+            hasEditPermission: true,
             canEdit: true,
             canDelete: true,
         };
@@ -110,6 +114,28 @@ describe('components/dot_menu/DotMenu', () => {
         );
 
         expect(wrapper.find(`#unread_post_${baseProps.post.id}`).prop('show')).toBe(false);
+    });
+
+    test('should not show edit button when edits are disabled', () => {
+        const wrapper = shallowWithIntl(
+            <DotMenu {...baseProps}/>,
+        );
+
+        expect(wrapper.find(`#edit_post_${baseProps.post.id}`).prop('show')).toBe(false);
+    });
+
+    test('edit button should be disabled when edit window has passed', () => {
+        const props = {
+            ...baseProps,
+            hasEditPermission: true,
+            canEdit: false,
+            postEditTimeLimit: '5',
+        };
+        const wrapper = shallowWithIntl(
+            <DotMenu {...props}/>,
+        );
+
+        expect(wrapper.find(`#edit_post_${baseProps.post.id}`).prop('disabled')).toBe(true);
     });
 
     describe('RHS', () => {

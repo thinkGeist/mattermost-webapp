@@ -114,6 +114,7 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
         isLicensed: license.IsLicensed === 'true',
         teamId: getCurrentTeamId(state),
         pluginMenuItems: state.plugins.components.PostDropdownMenu,
+        hasEditPermission: PostUtils.hasEditPermission(state, post, channel.id, channel.team_id),
         canEdit: PostUtils.canEditPost(state, post, license, config, channel, userId),
         canDelete: PostUtils.canDeletePost(state, post, channel),
         teamUrl,

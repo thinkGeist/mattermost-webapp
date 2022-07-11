@@ -13,7 +13,7 @@ import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUserId, isCurrentUserSystemAdmin} from 'mattermost-redux/selectors/entities/users';
 import {getBool} from 'mattermost-redux/selectors/entities/preferences';
 
-import {unsetEditingPost} from 'actions/post_actions';
+import {unsetEditingPost, showPostEditTimeoutToast} from 'actions/post_actions';
 import {openModal} from 'actions/views/modals';
 import {scrollPostListToBottom} from 'actions/views/channel';
 import {editPost} from 'actions/views/posts';
@@ -48,6 +48,7 @@ function mapStateToProps(state: GlobalState) {
         maxPostSize: parseInt(config.MaxPostSize || '0', 10) || Constants.DEFAULT_CHARACTER_LIMIT,
         readOnlyChannel: !isCurrentUserSystemAdmin(state) && channel.name === Constants.DEFAULT_CHANNEL,
         useChannelMentions,
+        postEditTimeLimit: Number(config.PostEditTimeLimit) || Constants.UNSET_POST_EDIT_TIME_LIMIT,
     };
 }
 
@@ -59,6 +60,7 @@ function mapDispatchToProps(dispatch: Dispatch) {
             editPost,
             unsetEditingPost,
             openModal,
+            showPostEditTimeoutToast,
         }, dispatch),
     };
 }

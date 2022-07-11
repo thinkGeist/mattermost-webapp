@@ -1,0 +1,29 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`components/WarningToast should match snapshot 1`] = `
+<div
+  className="warning-toast__wrapper"
+>
+  <div
+    className="warning-toast"
+  >
+    <div
+      className="warning-toast__message"
+    >
+      <AlertOutlineIcon
+        size={18}
+      />
+      A hint
+    </div>
+    <div
+      className="warning-toast__dismiss"
+      data-testid="dismissWarningToast"
+      onClick={[Function]}
+    >
+      <CloseIcon
+        size={18}
+      />
+    </div>
+  </div>
+</div>
+`;

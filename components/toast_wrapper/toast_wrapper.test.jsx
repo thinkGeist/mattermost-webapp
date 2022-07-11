@@ -40,6 +40,7 @@ describe('components/ToastWrapper', () => {
         lastViewedAt: 12344,
         actions: {
             updateToastStatus: jest.fn(),
+            dismissWarningToast: jest.fn(),
         },
         match: {
             params: {

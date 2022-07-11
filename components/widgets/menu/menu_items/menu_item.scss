@@ -91,6 +91,12 @@
             text-overflow: ellipsis;
             white-space: nowrap;
 
+            &:disabled {
+                color: rgba(var(--center-channel-color-rgb), 0.48);
+                cursor: default;
+
+            }
+
             &.MenuItem__with-help {
                 display: block;
                 height: auto;

@@ -495,3 +495,13 @@ export function deleteChannel(channelId) {
         return {data: true};
     };
 }
+
+export function dismissWarningToast() {
+    return {
+        type: ActionTypes.UPDATE_WARNING_TOAST,
+        data: {
+            message: '',
+            shouldDisplay: false,
+        },
+    };
+}

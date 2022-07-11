@@ -13,8 +13,9 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {makePreparePostIdsForPostList} from 'mattermost-redux/utils/post_list';
 import {getCurrentChannel, countCurrentChannelUnreadMessages, isManuallyUnread} from 'mattermost-redux/selectors/entities/channels';
 import {getUnreadScrollPositionPreference, isCollapsedThreadsEnabled} from 'mattermost-redux/selectors/entities/preferences';
+import {getWarningToast} from 'selectors/views/channel';
 
-import {updateToastStatus} from 'actions/views/channel';
+import {updateToastStatus, dismissWarningToast} from 'actions/views/channel';
 
 import ToastWrapper from './toast_wrapper.jsx';
 export function makeGetRootPosts() {
@@ -98,6 +99,7 @@ function makeMapStateToProps() {
             isCollapsedThreadsEnabled: isCollapsedThreadsEnabled(state),
             unreadCountInChannel: countCurrentChannelUnreadMessages(state),
             channelMarkedAsUnread,
+            warningMessage: getWarningToast(state),
         };
     };
 }
@@ -106,6 +108,7 @@ function mapDispatchToProps(dispatch) {
     return {
         actions: bindActionCreators({
             updateToastStatus,
+            dismissWarningToast,
         }, dispatch),
     };
 }

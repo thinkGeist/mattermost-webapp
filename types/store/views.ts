@@ -58,6 +58,10 @@ export type ViewsState = {
             [channelId: string]: string;
         };
         toastStatus: boolean;
+        warningToast: {
+            message: string;
+            shouldDisplay: boolean;
+        };
     };
 
     rhs: RhsViewState;

@@ -15,6 +15,7 @@ import {browserHistory} from 'utils/browser_history';
 import {SearchShortcut} from 'components/search_shortcut';
 import {HintToast} from 'components/hint-toast/hint_toast';
 import {Preferences} from 'mattermost-redux/constants';
+import {WarningToast} from 'components/warning_toast/warning_toast';
 
 const TOAST_TEXT_COLLAPSE_WIDTH = 500;
 
@@ -48,6 +49,7 @@ class ToastWrapper extends React.PureComponent {
         shouldStartFromBottomWhenUnread: PropTypes.bool,
         isNewMessageLineReached: PropTypes.bool,
         unreadScrollPosition: PropTypes.string,
+        warningMessage: PropTypes.string,
 
         /*
          * Object from react-router
@@ -64,11 +66,13 @@ class ToastWrapper extends React.PureComponent {
              * Action creator to update toast status
              */
             updateToastStatus: PropTypes.func.isRequired,
+            dismissWarningToast: PropTypes.func.isRequired,
         }).isRequired,
     };
 
     static defaultProps = {
         focusedPostId: '',
+        warningMessage: '',
     };
 
     constructor(props) {
@@ -229,6 +233,8 @@ class ToastWrapper extends React.PureComponent {
                 this.hideNewMessagesToast();
             } else if (this.state.showUnreadWithBottomStartToast) {
                 this.hideUnreadWithBottomStartToast();
+            } else if (this.props.warningMessage) {
+                this.hideWarningToast();
             } else {
                 this.hideArchiveToast();
             }
@@ -273,6 +279,12 @@ class ToastWrapper extends React.PureComponent {
             this.setState({
                 showUnreadWithBottomStartToast: false,
             });
+        }
+    }
+
+    hideWarningToast = () => {
+        if (this.props.actions.dismissWarningToast) {
+            this.props.actions.dismissWarningToast();
         }
     }
 
@@ -371,7 +383,7 @@ class ToastWrapper extends React.PureComponent {
     }
 
     getToastToRender() {
-        const {atLatestPost, atBottom, width, lastViewedAt, showSearchHintToast} = this.props;
+        const {atLatestPost, atBottom, width, lastViewedAt, showSearchHintToast, warningMessage} = this.props;
         const {showUnreadToast, showNewMessagesToast, showMessageHistoryToast, showUnreadWithBottomStartToast, unreadCount} = this.state;
 
         const unreadToastProps = {
@@ -451,6 +463,16 @@ class ToastWrapper extends React.PureComponent {
                 >
                     {this.getSearchHintToastText()}
                 </HintToast>
+            );
+        }
+
+        if (warningMessage) {
+            return (
+                <WarningToast
+                    onDismiss={this.props.actions.dismissWarningToast}
+                >
+                    {warningMessage}
+                </WarningToast>
             );
         }
 

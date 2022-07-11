@@ -26,7 +26,10 @@ import {
     StoragePrefixes,
 } from 'utils/constants';
 import {matchEmoticons} from 'utils/emoticons';
+import {t} from 'utils/i18n';
+import {hasEditPermission} from 'utils/post_utils';
 import * as UserAgent from 'utils/user_agent';
+import * as Utils from 'utils/utils';
 
 import {completePostReceive} from './new_post';
 
@@ -225,6 +228,7 @@ export function setEditingPost(postId = '', refocusId = '', title = '', isRHS = 
         const teamId = channel.team_id || '';
 
         const canEditNow = canEditPost(state, config, license, teamId, post.channel_id, userId, post);
+        const canEdit = hasEditPermission(state, post, post.channel_id, teamId);
 
         // Only show the modal if we can edit the post now, but allow it to be hidden at any time
 
@@ -233,6 +237,14 @@ export function setEditingPost(postId = '', refocusId = '', title = '', isRHS = 
                 type: ActionTypes.TOGGLE_EDITING_POST,
                 data: {postId, refocusId, title, isRHS, show: true},
             });
+        } else if (canEdit) {
+            // If edits are enabled but the window has passed display an error toast
+            const message = Utils.localizeAndFormatMessage(
+                t('post_info.edit.disabled'),
+                'Editing is only allowed for {maxSeconds} seconds.',
+                {maxSeconds: config.PostEditTimeLimit},
+            );
+            dispatch(showPostEditTimeoutToast(message));
         }
 
         return {data: canEditNow};
@@ -337,5 +349,15 @@ export function emitShortcutReactToLastPostFrom(emittedFrom) {
     return {
         type: ActionTypes.EMITTED_SHORTCUT_REACT_TO_LAST_POST,
         payload: emittedFrom,
+    };
+}
+
+export function showPostEditTimeoutToast(message) {
+    return {
+        type: ActionTypes.UPDATE_WARNING_TOAST,
+        data: {
+            message,
+            shouldDisplay: true,
+        },
     };
 }

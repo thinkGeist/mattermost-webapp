@@ -273,6 +273,7 @@ export const ActionTypes = keyMirror({
     SET_UNREAD_FILTER_ENABLED: null,
     UPDATE_TOAST_STATUS: null,
     UPDATE_THREAD_TOAST_STATUS: null,
+    UPDATE_WARNING_TOAST: null,
 
     SIDEBAR_DRAGGING_SET_STATE: null,
     SIDEBAR_DRAGGING_STOP: null,

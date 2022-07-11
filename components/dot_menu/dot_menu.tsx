@@ -51,6 +51,7 @@ type Props = {
     isReadOnly: boolean | null;
     isLicensed?: boolean; // TechDebt: Made non-mandatory while converting to typescript
     postEditTimeLimit?: string; // TechDebt: Made non-mandatory while converting to typescript
+    hasEditPermission: boolean;
     enableEmojiPicker?: boolean; // TechDebt: Made non-mandatory while converting to typescript
     channelIsArchived?: boolean; // TechDebt: Made non-mandatory while converting to typescript
     currentTeamUrl?: string; // TechDebt: Made non-mandatory while converting to typescript
@@ -161,7 +162,7 @@ export class DotMenuClass extends React.PureComponent<Props, State> {
 
         const postEditTimeLimit = this.props.postEditTimeLimit || Constants.UNSET_POST_EDIT_TIME_LIMIT;
 
-        if (canEdit && isLicensed) {
+        if (canEdit) {
             if (postEditTimeLimit !== String(Constants.UNSET_POST_EDIT_TIME_LIMIT)) {
                 const milliseconds = 1000;
                 const timeLeft = (post.create_at + (Number(postEditTimeLimit) * milliseconds)) - Utils.getTimestamp();
@@ -545,7 +546,14 @@ export class DotMenuClass extends React.PureComponent<Props, State> {
                     {!isSystemMessage && this.renderDivider('edit')}
                     <Menu.ItemAction
                         id={`edit_post_${this.props.post.id}`}
-                        show={this.state.canEdit}
+                        show={this.props.hasEditPermission}
+                        disabled={!this.state.canEdit}
+                        disabledText={
+                            this.props.intl.formatMessage({
+                                id: 'post_info.edit.disabled',
+                                defaultMessage: 'Editing is only allowed for {maxSeconds} seconds.',
+                            }, {maxSeconds: this.props.postEditTimeLimit})
+                        }
                         text={Utils.localizeMessage('post_info.edit', 'Edit')}
                         icon={Utils.getMenuItemIcon('icon-pencil-outline')}
                         rightDecorator={<ShortcutKey shortcutKey='E'/>}

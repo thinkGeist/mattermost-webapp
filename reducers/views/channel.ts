@@ -167,6 +167,21 @@ function toastStatus(state = false, action: GenericAction) {
     }
 }
 
+function warningToast(
+    state: {message?: string; shouldDisplay?: boolean} = {},
+    action: GenericAction,
+) {
+    switch (action.type) {
+    case ActionTypes.UPDATE_WARNING_TOAST:
+        return {
+            ...state,
+            ...action.data,
+        };
+    default:
+        return state;
+    }
+}
+
 function channelPrefetchStatus(state: {[channelId: string]: string} = {}, action: GenericAction) {
     switch (action.type) {
     case ActionTypes.PREFETCH_POSTS_FOR_CHANNEL:
@@ -192,5 +207,6 @@ export default combineReducers({
     lastUnreadChannel,
     lastGetPosts,
     toastStatus,
+    warningToast,
     channelPrefetchStatus,
 });
