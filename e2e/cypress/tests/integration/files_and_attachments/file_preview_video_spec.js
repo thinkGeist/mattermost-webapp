@@ -110,30 +110,30 @@ export function testVideoFile(properties) {
 
     // # Wait until file upload is complete then submit
     waitUntilUploadComplete();
-    cy.get('#post_textbox').should('be.visible').clear().type('{enter}');
+    cy.uiGetPostTextBox().clear().type('{enter}');
     cy.wait(TIMEOUTS.ONE_SEC);
 
     // # Open file preview
     cy.uiGetFileThumbnail(fileName).click();
 
     // * Verify that the preview modal open up
-    cy.uiGetFilePreviewModal().within(() => {
-        if (shouldPreview) {
-            // * Check if the video element exist
-            cy.get('video').should('exist');
-        }
+    cy.uiGetFilePreviewModal().as('filePreviewModal');
 
-        // * Download button should exist
-        cy.uiGetDownloadFilePreviewModal().then((downloadLink) => {
-            expect(downloadLink.attr('download')).to.equal(fileName);
+    if (shouldPreview) {
+        // * Check if the video element exist
+        cy.get('@filePreviewModal').get('video').should('exist');
+    }
 
-            const fileAttachmentURL = downloadLink.attr('href');
+    // * Download button should exist
+    cy.get('@filePreviewModal').uiGetDownloadFilePreviewModal().then((downloadLink) => {
+        expect(downloadLink.attr('download')).to.equal(fileName);
 
-            // * Verify that download link has correct name
-            downloadAttachmentAndVerifyItsProperties(fileAttachmentURL, fileName, 'attachment');
-        });
+        const fileAttachmentURL = downloadLink.attr('href');
 
-        // # Close modal
-        cy.uiCloseFilePreviewModal();
+        // * Verify that download link has correct name
+        downloadAttachmentAndVerifyItsProperties(fileAttachmentURL, fileName, 'attachment');
     });
+
+    // # Close modal
+    cy.uiCloseFilePreviewModal();
 }

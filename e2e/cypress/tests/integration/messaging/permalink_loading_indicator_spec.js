@@ -51,7 +51,7 @@ describe('Messaging', () => {
             cy.clickPostDotMenu(permalinkPostId);
 
             // # Click on "Copy Link"
-            cy.uiClickCopyLink(permalink);
+            cy.uiClickCopyLink(permalink, permalinkPostId);
 
             // # Click on test public channel
             cy.get('#sidebarItem_' + testPublicChannel.name).click({force: true});
@@ -72,7 +72,7 @@ describe('Messaging', () => {
                 cy.wait(TIMEOUTS.FIVE_SEC).url().should('include', `/${testTeam.name}/channels/${testPrivateChannel.name}`).and('not.include', `/${permalinkPostId}`);
 
                 // * Check if the matching channel intro title is visible
-                cy.get('#channelIntro').contains('.channel-intro__title', `Beginning of ${testPrivateChannel.display_name}`).should('be.visible');
+                cy.get('#channelIntro').contains('.channel-intro__title', `Beginning of ${testPrivateChannel.display_name}`).scrollIntoView().should('be.visible');
             });
 
             // # Get last post id from open channel

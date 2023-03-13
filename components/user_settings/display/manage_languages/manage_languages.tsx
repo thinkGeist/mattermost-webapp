@@ -2,23 +2,26 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {FormattedMessage} from 'react-intl';
+import {FormattedMessage, injectIntl, IntlShape} from 'react-intl';
 import ReactSelect, {ValueType} from 'react-select';
 
+import SettingItemMax from 'components/setting_item_max';
+
 import {ActionResult} from 'mattermost-redux/types/actions';
-import {UserProfile} from '@mattermost/types/users';
 
 import * as I18n from 'i18n/i18n.jsx';
-import SettingItemMax from 'components/setting_item_max.jsx';
-import FormattedMarkdownMessage from 'components/formatted_markdown_message.jsx';
 import {isKeyPressed} from 'utils/utils';
 import Constants from 'utils/constants';
+
+import {UserProfile} from '@mattermost/types/users';
+import ExternalLink from 'components/external_link';
 
 type Actions = {
     updateMe: (user: UserProfile) => Promise<ActionResult>;
 };
 
 type Props = {
+    intl: IntlShape;
     user: UserProfile;
     locale: string;
     updateSection: (section: string) => void;
@@ -38,7 +41,7 @@ type State = {
     selectedOption: SelectedOption;
 };
 
-export default class ManageLanguage extends React.PureComponent<Props, State> {
+export class ManageLanguage extends React.PureComponent<Props, State> {
     reactSelectContainer: React.RefObject<HTMLDivElement>;
     constructor(props: Props) {
         super(props);
@@ -150,6 +153,7 @@ export default class ManageLanguage extends React.PureComponent<Props, State> {
     };
 
     render() {
+        const {intl} = this.props;
         let serverError;
         if (this.state.serverError) {
             serverError = (
@@ -180,11 +184,13 @@ export default class ManageLanguage extends React.PureComponent<Props, State> {
                 zIndex: 9999,
             }),
         };
+        const interfaceLanguageLabelAria = intl.formatMessage({id: 'user.settings.languages.dropdown.arialabel', defaultMessage: 'Dropdown selector to change the interface language'});
 
         const input = (
             <div key='changeLanguage'>
                 <br/>
                 <label
+                    aria-label={interfaceLanguageLabelAria}
                     className='control-label'
                     id='changeInterfaceLanguageLabel'
                 >
@@ -217,9 +223,24 @@ export default class ManageLanguage extends React.PureComponent<Props, State> {
                 </div>
                 <div>
                     <br/>
-                    <FormattedMarkdownMessage
-                        id='user.settings.languages.promote'
-                        defaultMessage='Select which language Mattermost displays in the user interface.\n \nWould you like to help with translations? Join the [Mattermost Translation Server](!http://translate.mattermost.com/) to contribute.'
+                    <FormattedMessage
+                        id='user.settings.languages.promote1'
+                        defaultMessage='Select which language Mattermost displays in the user interface.'
+                    />
+                    <p/>
+                    <FormattedMessage
+                        id='user.settings.languages.promote2'
+                        defaultMessage='Would you like to help with translations? Join the <link>Mattermost Translation Server</link> to contribute.'
+                        values={{
+                            link: (msg: React.ReactNode) => (
+                                <ExternalLink
+                                    href='http://translate.mattermost.com'
+                                    location='manage_languages'
+                                >
+                                    {msg}
+                                </ExternalLink>
+                            ),
+                        }}
                     />
                 </div>
             </div>
@@ -242,3 +263,4 @@ export default class ManageLanguage extends React.PureComponent<Props, State> {
         );
     }
 }
+export default injectIntl(ManageLanguage);

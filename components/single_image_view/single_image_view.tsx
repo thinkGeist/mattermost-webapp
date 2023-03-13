@@ -19,6 +19,7 @@ import FilePreviewModal from 'components/file_preview_modal';
 import type {PropsFromRedux} from './index';
 
 const PREVIEW_IMAGE_MIN_DIMENSION = 50;
+const DISPROPORTIONATE_HEIGHT_RATIO = 20;
 
 interface Props extends PropsFromRedux {
     postId: string;
@@ -39,14 +40,13 @@ type State = {
 }
 
 export default class SingleImageView extends React.PureComponent<Props, State> {
-    private mounted: boolean;
+    private mounted = false;
     static defaultProps = {
         compactDisplay: false,
     };
 
     constructor(props: Props) {
         super(props);
-        this.mounted = true;
         this.state = {
             loaded: false,
             dimensions: {
@@ -91,6 +91,7 @@ export default class SingleImageView extends React.PureComponent<Props, State> {
             dialogProps: {
                 fileInfos: [this.props.fileInfo],
                 postId: this.props.postId,
+                startIndex: 0,
             },
         });
     }
@@ -120,10 +121,11 @@ export default class SingleImageView extends React.PureComponent<Props, State> {
         const previewHeight = fileInfo.height;
         const previewWidth = fileInfo.width;
 
+        const hasDisproportionateHeight = previewHeight / previewWidth > DISPROPORTIONATE_HEIGHT_RATIO;
         let minPreviewClass = '';
         if (
-            previewWidth < PREVIEW_IMAGE_MIN_DIMENSION ||
-            previewHeight < PREVIEW_IMAGE_MIN_DIMENSION
+            (previewWidth < PREVIEW_IMAGE_MIN_DIMENSION ||
+            previewHeight < PREVIEW_IMAGE_MIN_DIMENSION) && !hasDisproportionateHeight
         ) {
             minPreviewClass = 'min-preview ';
 

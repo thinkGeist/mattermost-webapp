@@ -63,23 +63,21 @@ exports[`components/admin_console/license_settings/LicenseSettings load screen a
             className="terms-and-policy"
           >
             See also 
-            <a
+            <ExternalLink
               href="https://mattermost.com/terms-of-use/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Enterprise Edition Terms of Use
-            </a>
+            </ExternalLink>
              and 
-            <a
+            <ExternalLink
               href="https://mattermost.com/privacy-policy/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Privacy Policy
-            </a>
+            </ExternalLink>
           </div>
         </div>
         <div
@@ -169,23 +167,21 @@ exports[`components/admin_console/license_settings/LicenseSettings load screen w
             className="terms-and-policy"
           >
             See also 
-            <a
+            <ExternalLink
               href="https://mattermost.com/terms-of-use/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Enterprise Edition Terms of Use
-            </a>
+            </ExternalLink>
              and 
-            <a
+            <ExternalLink
               href="https://mattermost.com/privacy-policy/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Privacy Policy
-            </a>
+            </ExternalLink>
           </div>
         </div>
         <div
@@ -234,7 +230,6 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
           enterpriseReady={true}
           gettingTrial={false}
           gettingTrialError={null}
-          gettingTrialResponseCode={null}
           handleRestart={[Function]}
           handleUpgrade={[Function]}
           isDisabled={false}
@@ -280,23 +275,21 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
             className="terms-and-policy"
           >
             See also 
-            <a
+            <ExternalLink
               href="https://mattermost.com/terms-of-use/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Enterprise Edition Terms of Use
-            </a>
+            </ExternalLink>
              and 
-            <a
+            <ExternalLink
               href="https://mattermost.com/privacy-policy/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Privacy Policy
-            </a>
+            </ExternalLink>
           </div>
         </div>
         <div
@@ -311,14 +304,13 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
             className="compare-plans-text"
           >
             Curious about upgrading? 
-            <a
+            <ExternalLink
               href="https://mattermost.com/pricing/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Compare Plans
-            </a>
+            </ExternalLink>
           </div>
         </div>
       </div>
@@ -396,6 +388,7 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
               }
               openEELicenseModal={[Function]}
               removing={false}
+              statsActiveUsers={10}
               upgradedFromTE={false}
             />
           </div>
@@ -403,23 +396,21 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
             className="terms-and-policy"
           >
             See also 
-            <a
+            <ExternalLink
               href="https://mattermost.com/terms-of-use/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Enterprise Edition Terms of Use
-            </a>
+            </ExternalLink>
              and 
-            <a
+            <ExternalLink
               href="https://mattermost.com/privacy-policy/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Privacy Policy
-            </a>
+            </ExternalLink>
           </div>
         </div>
         <div
@@ -448,14 +439,13 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
             className="compare-plans-text"
           >
             Curious about upgrading? 
-            <a
+            <ExternalLink
               href="https://mattermost.com/pricing/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Compare Plans
-            </a>
+            </ExternalLink>
           </div>
         </div>
       </div>
@@ -533,6 +523,7 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
               }
               openEELicenseModal={[Function]}
               removing={false}
+              statsActiveUsers={10}
               upgradedFromTE={false}
             />
           </div>
@@ -540,23 +531,21 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
             className="terms-and-policy"
           >
             See also 
-            <a
+            <ExternalLink
               href="https://mattermost.com/terms-of-use/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Enterprise Edition Terms of Use
-            </a>
+            </ExternalLink>
              and 
-            <a
+            <ExternalLink
               href="https://mattermost.com/privacy-policy/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Privacy Policy
-            </a>
+            </ExternalLink>
           </div>
         </div>
         <div
@@ -657,6 +646,7 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
               }
               openEELicenseModal={[Function]}
               removing={false}
+              statsActiveUsers={10}
               upgradedFromTE={false}
             />
           </div>
@@ -664,23 +654,21 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
             className="terms-and-policy"
           >
             See also 
-            <a
+            <ExternalLink
               href="https://mattermost.com/terms-of-use/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Enterprise Edition Terms of Use
-            </a>
+            </ExternalLink>
              and 
-            <a
+            <ExternalLink
               href="https://mattermost.com/privacy-policy/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Privacy Policy
-            </a>
+            </ExternalLink>
           </div>
         </div>
         <div
@@ -781,6 +769,7 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
               }
               openEELicenseModal={[Function]}
               removing={false}
+              statsActiveUsers={10}
               upgradedFromTE={false}
             />
           </div>
@@ -788,23 +777,21 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
             className="terms-and-policy"
           >
             See also 
-            <a
+            <ExternalLink
               href="https://mattermost.com/terms-of-use/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Enterprise Edition Terms of Use
-            </a>
+            </ExternalLink>
              and 
-            <a
+            <ExternalLink
               href="https://mattermost.com/privacy-policy/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Privacy Policy
-            </a>
+            </ExternalLink>
           </div>
         </div>
         <div
@@ -905,6 +892,7 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
               }
               openEELicenseModal={[Function]}
               removing={false}
+              statsActiveUsers={10}
               upgradedFromTE={false}
             />
           </div>
@@ -912,23 +900,21 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
             className="terms-and-policy"
           >
             See also 
-            <a
+            <ExternalLink
               href="https://mattermost.com/terms-of-use/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Enterprise Edition Terms of Use
-            </a>
+            </ExternalLink>
              and 
-            <a
+            <ExternalLink
               href="https://mattermost.com/privacy-policy/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Privacy Policy
-            </a>
+            </ExternalLink>
           </div>
         </div>
         <div
@@ -1029,6 +1015,7 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
               }
               openEELicenseModal={[Function]}
               removing={false}
+              statsActiveUsers={10}
               upgradedFromTE={true}
             />
           </div>
@@ -1036,23 +1023,21 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
             className="terms-and-policy"
           >
             See also 
-            <a
+            <ExternalLink
               href="https://mattermost.com/terms-of-use/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Enterprise Edition Terms of Use
-            </a>
+            </ExternalLink>
              and 
-            <a
+            <ExternalLink
               href="https://mattermost.com/privacy-policy/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Privacy Policy
-            </a>
+            </ExternalLink>
           </div>
         </div>
         <div
@@ -1142,6 +1127,7 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
               }
               openEELicenseModal={[Function]}
               removing={false}
+              statsActiveUsers={10}
               upgradedFromTE={false}
             />
           </div>
@@ -1168,14 +1154,13 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
             className="compare-plans-text"
           >
             Curious about upgrading? 
-            <a
+            <ExternalLink
               href="https://mattermost.com/pricing/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Compare Plans
-            </a>
+            </ExternalLink>
           </div>
         </div>
       </div>
@@ -1252,23 +1237,21 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
             className="terms-and-policy"
           >
             See also 
-            <a
+            <ExternalLink
               href="https://mattermost.com/terms-of-use/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Enterprise Edition Terms of Use
-            </a>
+            </ExternalLink>
              and 
-            <a
+            <ExternalLink
               href="https://mattermost.com/privacy-policy/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Privacy Policy
-            </a>
+            </ExternalLink>
           </div>
         </div>
         <div
@@ -1283,14 +1266,13 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
             className="compare-plans-text"
           >
             Curious about upgrading? 
-            <a
+            <ExternalLink
               href="https://mattermost.com/pricing/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Compare Plans
-            </a>
+            </ExternalLink>
           </div>
         </div>
       </div>
@@ -1367,23 +1349,21 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
             className="terms-and-policy"
           >
             See also 
-            <a
+            <ExternalLink
               href="https://mattermost.com/terms-of-use/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Enterprise Edition Terms of Use
-            </a>
+            </ExternalLink>
              and 
-            <a
+            <ExternalLink
               href="https://mattermost.com/privacy-policy/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Privacy Policy
-            </a>
+            </ExternalLink>
           </div>
         </div>
         <div
@@ -1398,14 +1378,13 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
             className="compare-plans-text"
           >
             Curious about upgrading? 
-            <a
+            <ExternalLink
               href="https://mattermost.com/pricing/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Compare Plans
-            </a>
+            </ExternalLink>
           </div>
         </div>
       </div>
@@ -1477,23 +1456,21 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
             className="terms-and-policy"
           >
             See also 
-            <a
+            <ExternalLink
               href="https://mattermost.com/terms-of-use/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Enterprise Edition Terms of Use
-            </a>
+            </ExternalLink>
              and 
-            <a
+            <ExternalLink
               href="https://mattermost.com/privacy-policy/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Privacy Policy
-            </a>
+            </ExternalLink>
           </div>
         </div>
         <div
@@ -1581,23 +1558,21 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
             className="terms-and-policy"
           >
             See also 
-            <a
+            <ExternalLink
               href="https://mattermost.com/terms-of-use/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Enterprise Edition Terms of Use
-            </a>
+            </ExternalLink>
              and 
-            <a
+            <ExternalLink
               href="https://mattermost.com/privacy-policy/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Privacy Policy
-            </a>
+            </ExternalLink>
           </div>
         </div>
         <div
@@ -1621,14 +1596,13 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
             className="compare-plans-text"
           >
             Curious about upgrading? 
-            <a
+            <ExternalLink
               href="https://mattermost.com/pricing/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Compare Plans
-            </a>
+            </ExternalLink>
           </div>
         </div>
       </div>
@@ -1689,23 +1663,21 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
             className="terms-and-policy"
           >
             See also 
-            <a
+            <ExternalLink
               href="https://mattermost.com/terms-of-use/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Enterprise Edition Terms of Use
-            </a>
+            </ExternalLink>
              and 
-            <a
+            <ExternalLink
               href="https://mattermost.com/privacy-policy/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Privacy Policy
-            </a>
+            </ExternalLink>
           </div>
         </div>
         <div
@@ -1720,14 +1692,13 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
             className="compare-plans-text"
           >
             Curious about upgrading? 
-            <a
+            <ExternalLink
               href="https://mattermost.com/pricing/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Compare Plans
-            </a>
+            </ExternalLink>
           </div>
         </div>
       </div>
@@ -1788,6 +1759,7 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
               }
               openEELicenseModal={[Function]}
               removing={false}
+              statsActiveUsers={10}
               upgradedFromTE={false}
             />
           </div>
@@ -1795,23 +1767,21 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
             className="terms-and-policy"
           >
             See also 
-            <a
+            <ExternalLink
               href="https://mattermost.com/terms-of-use/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Enterprise Edition Terms of Use
-            </a>
+            </ExternalLink>
              and 
-            <a
+            <ExternalLink
               href="https://mattermost.com/privacy-policy/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Privacy Policy
-            </a>
+            </ExternalLink>
           </div>
         </div>
         <div
@@ -1913,6 +1883,7 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
               }
               openEELicenseModal={[Function]}
               removing={false}
+              statsActiveUsers={10}
               upgradedFromTE={false}
             />
           </div>
@@ -1920,23 +1891,21 @@ exports[`components/admin_console/license_settings/LicenseSettings should match 
             className="terms-and-policy"
           >
             See also 
-            <a
+            <ExternalLink
               href="https://mattermost.com/terms-of-use/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Enterprise Edition Terms of Use
-            </a>
+            </ExternalLink>
              and 
-            <a
+            <ExternalLink
               href="https://mattermost.com/privacy-policy/"
               id="privacyLink"
-              rel="noopener noreferrer"
-              target="_blank"
+              location="license_settings"
             >
               Privacy Policy
-            </a>
+            </ExternalLink>
           </div>
         </div>
         <div

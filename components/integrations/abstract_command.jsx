@@ -6,7 +6,7 @@ import PropTypes from 'prop-types';
 import {FormattedMessage} from 'react-intl';
 import {Link} from 'react-router-dom';
 
-import BackstageHeader from 'components/backstage/components/backstage_header.jsx';
+import BackstageHeader from 'components/backstage/components/backstage_header';
 import Constants from 'utils/constants';
 import * as Utils from 'utils/utils';
 import FormError from 'components/form_error';
@@ -14,6 +14,7 @@ import SpinnerButton from 'components/spinner_button';
 import LocalizedInput from 'components/localized_input/localized_input';
 
 import {t} from 'utils/i18n';
+import ExternalLink from 'components/external_link';
 
 const REQUEST_POST = 'P';
 const REQUEST_GET = 'G';
@@ -392,7 +393,7 @@ export default class AbstractCommand extends React.PureComponent {
                                 <div className='form__help'>
                                     <FormattedMessage
                                         id='add_command.description.help'
-                                        defaultMessage='Describe your incoming webhook.'
+                                        defaultMessage='Describe your slash command.'
                                     />
                                 </div>
                             </div>
@@ -435,16 +436,15 @@ export default class AbstractCommand extends React.PureComponent {
                                         defaultMessage='Reserved: {link}'
                                         values={{
                                             link: (
-                                                <a
+                                                <ExternalLink
                                                     href='https://developers.mattermost.com/integrate/admin-guide/admin-slash-commands/#built-in-commands'
-                                                    target='_blank'
-                                                    rel='noopener noreferrer'
+                                                    location='abstract_command'
                                                 >
                                                     <FormattedMessage
                                                         id='add_command.trigger.helpReservedLinkText'
                                                         defaultMessage='See built-in slash commands'
                                                     />
-                                                </a>
+                                                </ExternalLink>
                                             ),
                                         }}
                                     />

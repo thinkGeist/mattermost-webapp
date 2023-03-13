@@ -1,32 +1,42 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
+
 import React, {useRef, useCallback, useEffect, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 
 import Icon from '@mattermost/compass-components/foundations/icon/Icon';
+
 import {FormattedMessage} from 'react-intl';
 
-import {useFirstAdminUser, useIsCurrentUserSystemAdmin} from 'components/global_header/hooks';
-
-import {getPrevTrialLicense} from 'mattermost-redux/actions/admin';
 import {getShowTaskListBool} from 'selectors/onboarding';
-import {getBool, getMyPreferences as getMyPreferencesSelector} from 'mattermost-redux/selectors/entities/preferences';
+import {shouldShowAutoLinkedBoard} from 'selectors/plugins';
+
+import {
+    getBool,
+    getMyPreferences as getMyPreferencesSelector,
+} from 'mattermost-redux/selectors/entities/preferences';
 import {getMyPreferences, savePreferences} from 'mattermost-redux/actions/preferences';
+import {getPrevTrialLicense} from 'mattermost-redux/actions/admin';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
-import {trackEvent} from 'actions/telemetry_actions';
-import checklistImg from 'images/onboarding-checklist.svg';
+import {getConfig} from 'mattermost-redux/selectors/entities/general';
+
 import {
     useTasksListWithStatus,
     OnboardingTaskCategory,
     OnboardingTaskList,
 } from 'components/onboarding_tasks';
+import {useFirstAdminUser, useIsCurrentUserSystemAdmin} from 'components/global_header/hooks';
 import {useHandleOnBoardingTaskTrigger} from 'components/onboarding_tasks/onboarding_tasks_manager';
-import {openModal} from 'actions/views/modals';
-import {GlobalState} from 'types/store';
 import OnBoardingVideoModal from 'components/onboarding_tasks/onboarding_video_modal/onboarding_video_modal';
 
-import {Preferences, RecommendedNextStepsLegacy} from 'utils/constants';
+import {openModal} from 'actions/views/modals';
+import {GlobalState} from 'types/store';
+import {showRHSPlugin} from 'actions/views/rhs';
+import {trackEvent} from 'actions/telemetry_actions';
+import checklistImg from 'images/onboarding-checklist.svg';
+
+import {Preferences, RecommendedNextStepsLegacy, suitePluginIds} from 'utils/constants';
 
 import {TaskListPopover} from './onboarding_tasklist_popover';
 import {Task} from './onboarding_tasklist_task';
@@ -37,7 +47,7 @@ const TaskItems = styled.div`
     border-radius: 4px;
     border: solid 1px rgba(var(--center-channel-color-rgb), 0.16);
     background-color: var(--center-channel-bg);
-    max-width: 352px;
+    width: 352px;
     padding: 24px 0;
     transform: scale(0);
     opacity: 0;
@@ -92,15 +102,15 @@ const Button = styled.button<{open: boolean}>(({open}) => {
         background: var(--center-channel-bg);
         border: solid 1px rgba(var(--center-channel-color-rgb), 0.16);
         box-shadow: var(--elevation-3);
-        
+
         i {
             color: rgba(var(--center-channel-color-rgb), 0.56);
         }
-        
+
         &:hover {
             border-color: rgba(var(--center-channel-color-rgb), 0.24);
             box-shadow: var(--elevation-4);
-            
+
             i {
                 color: rgba(var(--center-channel-color-rgb), 0.72)
             }
@@ -138,7 +148,7 @@ const PlayButton = styled.button`
     left: 0;
     right: 0;
     top: 48px;
-  
+
     &:hover {
         border-color: rgba(var(--center-channel-color-rgb), 0.24);
         box-shadow: var(--elevation-4);
@@ -151,9 +161,9 @@ const PlayButton = styled.button`
 `;
 
 const Skeleton = styled.div`
-    width: 304px;
-    height: 137px;
-    margin: 8px auto;
+    height: auto;
+    margin: 0 auto;
+    padding: 0 20px;
     position: relative;
 `;
 
@@ -178,11 +188,25 @@ const OnBoardingTaskList = (): JSX.Element | null => {
     const itemsLeft = tasksList.length - completedCount;
     const isCurrentUserSystemAdmin = useIsCurrentUserSystemAdmin();
     const isFirstAdmin = useFirstAdminUser();
+    const isEnableOnboardingFlow = useSelector((state: GlobalState) => getConfig(state).EnableOnboardingFlow === 'true');
     const [showTaskList, firstTimeOnboarding] = useSelector(getShowTaskListBool);
+
+    // a/b test auto show linked boards
+    const autoShowLinkedBoard = useSelector((state: GlobalState) => shouldShowAutoLinkedBoard(state));
+    const pluginsComponentsList = useSelector((state: GlobalState) => state.plugins.components);
 
     const startTask = (taskName: string) => {
         toggleTaskList();
         handleTaskTrigger(taskName);
+    };
+
+    const findRhsPluginId = (pluginId: string) => {
+        const rhsPlugins = pluginsComponentsList.RightHandSidebarComponent;
+
+        if (rhsPlugins.length) {
+            return rhsPlugins.find((plugin) => plugin.pluginId === pluginId)?.id;
+        }
+        return null;
     };
 
     const initOnboardingPrefs = async () => {
@@ -215,7 +239,13 @@ const OnBoardingTaskList = (): JSX.Element | null => {
         if (firstTimeOnboarding) {
             initOnboardingPrefs();
         }
-    }, [firstTimeOnboarding]);
+    }, []);
+
+    useEffect(() => {
+        if (firstTimeOnboarding && showTaskList && isEnableOnboardingFlow) {
+            trackEvent(OnboardingTaskCategory, OnboardingTaskList.ONBOARDING_TASK_LIST_SHOW);
+        }
+    }, [firstTimeOnboarding, showTaskList, isEnableOnboardingFlow]);
 
     // Done to show task done animation in closed state as well
     useEffect(() => {
@@ -250,7 +280,7 @@ const OnBoardingTaskList = (): JSX.Element | null => {
             value: 'false',
         }];
         dispatch(savePreferences(currentUserId, preferences));
-        trackEvent(OnboardingTaskCategory, OnboardingTaskList.ONBOARDING_TASK_LIST_SHOW);
+        trackEvent(OnboardingTaskCategory, OnboardingTaskList.DECLINED_ONBOARDING_TASK_LIST);
     }, [currentUserId]);
 
     const toggleTaskList = useCallback(() => {
@@ -261,6 +291,17 @@ const OnBoardingTaskList = (): JSX.Element | null => {
             value: String(!open),
         }];
         dispatch(savePreferences(currentUserId, preferences));
+        trackEvent(OnboardingTaskCategory, open ? OnboardingTaskList.ONBOARDING_TASK_LIST_CLOSE : OnboardingTaskList.ONBOARDING_TASK_LIST_OPEN);
+
+        // check if the AB test FF is set and also check that the linkedBoard has only been shown once, then open the RHS
+        if (autoShowLinkedBoard && open) {
+            const boardsId = findRhsPluginId(suitePluginIds.boards);
+            if (!boardsId) {
+                return;
+            }
+
+            dispatch(showRHSPlugin(boardsId));
+        }
     }, [open, currentUserId]);
 
     const openVideoModal = useCallback(() => {
@@ -272,7 +313,7 @@ const OnBoardingTaskList = (): JSX.Element | null => {
         }));
     }, []);
 
-    if (Object.keys(myPreferences).length === 0 || !showTaskList) {
+    if (Object.keys(myPreferences).length === 0 || !showTaskList || !isEnableOnboardingFlow) {
         return null;
     }
 
@@ -335,7 +376,7 @@ const OnBoardingTaskList = (): JSX.Element | null => {
                                 {tasksList.map((task) => (
                                     <Task
                                         key={OnboardingTaskCategory + task.name}
-                                        label={task.label}
+                                        label={task.label()}
                                         onClick={() => {
                                             startTask(task.name);
                                         }}

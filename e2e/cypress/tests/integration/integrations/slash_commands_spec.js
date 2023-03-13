@@ -215,7 +215,7 @@ describe('Integrations', () => {
         cy.clickPostCommentIcon();
 
         // # Type uppercase letter
-        cy.get('#reply_textbox').type('/C');
+        cy.uiGetReplyTextBox().type('/C');
 
         // # Scan inside of suggestion list
         cy.get('#suggestionList').should('exist').and('be.visible').within(() => {
@@ -224,7 +224,7 @@ describe('Integrations', () => {
         });
 
         // # Hit enter to send the message
-        cy.get('#reply_textbox').type('{enter}');
+        cy.uiGetReplyTextBox().type('{enter}');
 
         cy.get('@postID').then((postID) => {
             cy.get(`#rhsPost_${postID}`).should('be.visible').within(() => {
@@ -260,7 +260,7 @@ describe('Integrations', () => {
         cy.uiPostMessageQuickly(`/${commandTrigger} `);
         cy.getLastPost().within(() => {
             // * Should come from the webhook bot
-            cy.get('.BotBadge').should('exist');
+            cy.get('.BotTag').should('exist');
 
             // * Should contain the "Hello World" text
             cy.findByText('Hello World').should('exist');

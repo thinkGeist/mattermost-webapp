@@ -1,14 +1,14 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {AnyAction} from 'redux';
 import {batchActions} from 'redux-batched-actions';
 
 import {AdminTypes} from 'mattermost-redux/action_types';
-import {General} from '../constants';
+import {ActionFunc, DispatchFunc, GetStateFunc} from 'mattermost-redux/types/actions';
 import {Client4} from 'mattermost-redux/client';
 
-import {ActionFunc, DispatchFunc, GetStateFunc} from 'mattermost-redux/types/actions';
+import {General} from '../constants';
+
 import {Compliance} from '@mattermost/types/compliance';
 import {GroupSearchOpts} from '@mattermost/types/groups';
 import {
@@ -22,19 +22,24 @@ import {
 } from '@mattermost/types/channels';
 
 import {CompleteOnboardingRequest} from '@mattermost/types/setup';
+import {LogFilter} from '@mattermost/types/admin';
+import {ServerError} from '@mattermost/types/errors';
 
 import {bindClientFunc, forceLogoutIfNecessary} from './helpers';
 import {logError} from './errors';
 
-export function getLogs(page = 0, perPage: number = General.LOGS_PAGE_SIZE_DEFAULT): ActionFunc {
+export function getLogs({serverNames = [], logLevels = [], dateFrom, dateTo}: LogFilter): ActionFunc {
+    const logFilter = {
+        server_names: serverNames,
+        log_levels: logLevels,
+        date_from: dateFrom,
+        date_to: dateTo,
+    };
     return bindClientFunc({
         clientFunc: Client4.getLogs,
-        onRequest: AdminTypes.GET_LOGS_REQUEST,
-        onSuccess: [AdminTypes.RECEIVED_LOGS, AdminTypes.GET_LOGS_SUCCESS],
-        onFailure: AdminTypes.GET_LOGS_FAILURE,
+        onSuccess: [AdminTypes.RECEIVED_LOGS],
         params: [
-            page,
-            perPage,
+            logFilter,
         ],
     });
 }
@@ -42,9 +47,7 @@ export function getLogs(page = 0, perPage: number = General.LOGS_PAGE_SIZE_DEFAU
 export function getAudits(page = 0, perPage: number = General.PAGE_SIZE_DEFAULT): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.getAudits,
-        onRequest: AdminTypes.GET_AUDITS_REQUEST,
-        onSuccess: [AdminTypes.RECEIVED_AUDITS, AdminTypes.GET_AUDITS_SUCCESS],
-        onFailure: AdminTypes.GET_AUDITS_FAILURE,
+        onSuccess: [AdminTypes.RECEIVED_AUDITS],
         params: [
             page,
             perPage,
@@ -55,18 +58,14 @@ export function getAudits(page = 0, perPage: number = General.PAGE_SIZE_DEFAULT)
 export function getConfig(): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.getConfig,
-        onRequest: AdminTypes.GET_CONFIG_REQUEST,
-        onSuccess: [AdminTypes.RECEIVED_CONFIG, AdminTypes.GET_CONFIG_SUCCESS],
-        onFailure: AdminTypes.GET_CONFIG_FAILURE,
+        onSuccess: [AdminTypes.RECEIVED_CONFIG],
     });
 }
 
-export function updateConfig(config: Record<string, any>): ActionFunc {
+export function updateConfig(config: Record<string, unknown>): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.updateConfig,
-        onRequest: AdminTypes.UPDATE_CONFIG_REQUEST,
-        onSuccess: [AdminTypes.RECEIVED_CONFIG, AdminTypes.UPDATE_CONFIG_SUCCESS],
-        onFailure: AdminTypes.UPDATE_CONFIG_FAILURE,
+        onSuccess: [AdminTypes.RECEIVED_CONFIG],
         params: [
             config,
         ],
@@ -76,27 +75,19 @@ export function updateConfig(config: Record<string, any>): ActionFunc {
 export function reloadConfig(): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.reloadConfig,
-        onRequest: AdminTypes.RELOAD_CONFIG_REQUEST,
-        onSuccess: AdminTypes.RELOAD_CONFIG_SUCCESS,
-        onFailure: AdminTypes.RELOAD_CONFIG_FAILURE,
     });
 }
 
 export function getEnvironmentConfig(): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.getEnvironmentConfig,
-        onRequest: AdminTypes.GET_ENVIRONMENT_CONFIG_REQUEST,
-        onSuccess: [AdminTypes.RECEIVED_ENVIRONMENT_CONFIG, AdminTypes.GET_ENVIRONMENT_CONFIG_SUCCESS],
-        onFailure: AdminTypes.GET_ENVIRONMENT_CONFIG_FAILURE,
+        onSuccess: [AdminTypes.RECEIVED_ENVIRONMENT_CONFIG],
     });
 }
 
-export function testEmail(config: any): ActionFunc {
+export function testEmail(config: unknown): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.testEmail,
-        onRequest: AdminTypes.TEST_EMAIL_REQUEST,
-        onSuccess: AdminTypes.TEST_EMAIL_SUCCESS,
-        onFailure: AdminTypes.TEST_EMAIL_FAILURE,
         params: [
             config,
         ],
@@ -106,21 +97,15 @@ export function testEmail(config: any): ActionFunc {
 export function testSiteURL(siteURL: string): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.testSiteURL,
-        onRequest: AdminTypes.TEST_SITE_URL_REQUEST,
-        onSuccess: AdminTypes.TEST_SITE_URL_SUCCESS,
-        onFailure: AdminTypes.TEST_SITE_URL_FAILURE,
         params: [
             siteURL,
         ],
     });
 }
 
-export function testS3Connection(config: any): ActionFunc {
+export function testS3Connection(config: unknown): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.testS3Connection,
-        onRequest: AdminTypes.TEST_S3_REQUEST,
-        onSuccess: AdminTypes.TEST_S3_SUCCESS,
-        onFailure: AdminTypes.TEST_S3_FAILURE,
         params: [
             config,
         ],
@@ -130,18 +115,12 @@ export function testS3Connection(config: any): ActionFunc {
 export function invalidateCaches(): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.invalidateCaches,
-        onRequest: AdminTypes.INVALIDATE_CACHES_REQUEST,
-        onSuccess: AdminTypes.INVALIDATE_CACHES_SUCCESS,
-        onFailure: AdminTypes.INVALIDATE_CACHES_FAILURE,
     });
 }
 
 export function recycleDatabase(): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.recycleDatabase,
-        onRequest: AdminTypes.RECYCLE_DATABASE_REQUEST,
-        onSuccess: AdminTypes.RECYCLE_DATABASE_SUCCESS,
-        onFailure: AdminTypes.RECYCLE_DATABASE_FAILURE,
     });
 }
 
@@ -160,9 +139,7 @@ export function createComplianceReport(job: Partial<Compliance>): ActionFunc {
 export function getComplianceReport(reportId: string): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.getComplianceReport,
-        onRequest: AdminTypes.GET_COMPLIANCE_REQUEST,
-        onSuccess: [AdminTypes.RECEIVED_COMPLIANCE_REPORT, AdminTypes.GET_COMPLIANCE_SUCCESS],
-        onFailure: AdminTypes.GET_COMPLIANCE_FAILURE,
+        onSuccess: [AdminTypes.RECEIVED_COMPLIANCE_REPORT],
         params: [
             reportId,
         ],
@@ -172,9 +149,7 @@ export function getComplianceReport(reportId: string): ActionFunc {
 export function getComplianceReports(page = 0, perPage: number = General.PAGE_SIZE_DEFAULT): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.getComplianceReports,
-        onRequest: AdminTypes.GET_COMPLIANCE_REQUEST,
-        onSuccess: [AdminTypes.RECEIVED_COMPLIANCE_REPORTS, AdminTypes.GET_COMPLIANCE_SUCCESS],
-        onFailure: AdminTypes.GET_COMPLIANCE_FAILURE,
+        onSuccess: [AdminTypes.RECEIVED_COMPLIANCE_REPORTS],
         params: [
             page,
             perPage,
@@ -185,9 +160,6 @@ export function getComplianceReports(page = 0, perPage: number = General.PAGE_SI
 export function uploadBrandImage(imageData: File): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.uploadBrandImage,
-        onRequest: AdminTypes.UPLOAD_BRAND_IMAGE_REQUEST,
-        onSuccess: AdminTypes.UPLOAD_BRAND_IMAGE_SUCCESS,
-        onFailure: AdminTypes.UPLOAD_BRAND_IMAGE_FAILURE,
         params: [
             imageData,
         ],
@@ -197,45 +169,32 @@ export function uploadBrandImage(imageData: File): ActionFunc {
 export function deleteBrandImage(): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.deleteBrandImage,
-        onRequest: AdminTypes.DELETE_BRAND_IMAGE_REQUEST,
-        onSuccess: AdminTypes.DELETE_BRAND_IMAGE_SUCCESS,
-        onFailure: AdminTypes.DELETE_BRAND_IMAGE_FAILURE,
     });
 }
 
 export function getClusterStatus(): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.getClusterStatus,
-        onRequest: AdminTypes.GET_CLUSTER_STATUS_REQUEST,
-        onSuccess: [AdminTypes.RECEIVED_CLUSTER_STATUS, AdminTypes.GET_CLUSTER_STATUS_SUCCESS],
-        onFailure: AdminTypes.GET_CLUSTER_STATUS_FAILURE,
+        onSuccess: [AdminTypes.RECEIVED_CLUSTER_STATUS],
     });
 }
 
 export function testLdap(): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.testLdap,
-        onRequest: AdminTypes.TEST_LDAP_REQUEST,
-        onSuccess: AdminTypes.TEST_LDAP_SUCCESS,
-        onFailure: AdminTypes.TEST_LDAP_FAILURE,
     });
 }
 
 export function syncLdap(): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.syncLdap,
-        onRequest: AdminTypes.SYNC_LDAP_REQUEST,
-        onSuccess: AdminTypes.SYNC_LDAP_SUCCESS,
-        onFailure: AdminTypes.SYNC_LDAP_FAILURE,
     });
 }
 
 export function getLdapGroups(page = 0, perPage: number = General.PAGE_SIZE_MAXIMUM, opts: GroupSearchOpts = {q: ''}): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.getLdapGroups,
-        onRequest: AdminTypes.GET_LDAP_GROUPS_REQUEST,
-        onSuccess: [AdminTypes.RECEIVED_LDAP_GROUPS, AdminTypes.GET_LDAP_GROUPS_SUCCESS],
-        onFailure: AdminTypes.GET_LDAP_GROUPS_FAILURE,
+        onSuccess: [AdminTypes.RECEIVED_LDAP_GROUPS],
         params: [
             page,
             perPage,
@@ -246,30 +205,25 @@ export function getLdapGroups(page = 0, perPage: number = General.PAGE_SIZE_MAXI
 
 export function linkLdapGroup(key: string): ActionFunc {
     return async (dispatch: DispatchFunc, getState: GetStateFunc) => {
-        dispatch({type: AdminTypes.LINK_LDAP_GROUP_REQUEST, data: key});
-
         let data;
         try {
             data = await Client4.linkLdapGroup(key);
         } catch (error) {
-            forceLogoutIfNecessary(error, dispatch, getState);
+            forceLogoutIfNecessary(error as ServerError, dispatch, getState);
             dispatch({type: AdminTypes.LINK_LDAP_GROUP_FAILURE, error, data: key});
-            dispatch(logError(error));
+            dispatch(logError(error as ServerError));
             return {error};
         }
 
-        dispatch(batchActions([
-            {type: AdminTypes.LINK_LDAP_GROUP_SUCCESS, data: null},
-            {
-                type: AdminTypes.LINKED_LDAP_GROUP,
-                data: {
-                    primary_key: key,
-                    name: data.display_name,
-                    mattermost_group_id: data.id,
-                    has_syncables: false,
-                },
+        dispatch({
+            type: AdminTypes.LINKED_LDAP_GROUP,
+            data: {
+                primary_key: key,
+                name: data.display_name,
+                mattermost_group_id: data.id,
+                has_syncables: false,
             },
-        ]));
+        });
 
         return {data: true};
     };
@@ -277,21 +231,19 @@ export function linkLdapGroup(key: string): ActionFunc {
 
 export function unlinkLdapGroup(key: string): ActionFunc {
     return async (dispatch: DispatchFunc, getState: GetStateFunc) => {
-        dispatch({type: AdminTypes.UNLINK_LDAP_GROUP_REQUEST, data: key});
-
         try {
             await Client4.unlinkLdapGroup(key);
         } catch (error) {
-            forceLogoutIfNecessary(error, dispatch, getState);
+            forceLogoutIfNecessary(error as ServerError, dispatch, getState);
             dispatch({type: AdminTypes.UNLINK_LDAP_GROUP_FAILURE, error, data: key});
-            dispatch(logError(error));
+            dispatch(logError(error as ServerError));
             return {error};
         }
 
-        dispatch(batchActions([
-            {type: AdminTypes.UNLINK_LDAP_GROUP_SUCCESS, data: null},
-            {type: AdminTypes.UNLINKED_LDAP_GROUP, data: key},
-        ]));
+        dispatch({
+            type: AdminTypes.UNLINKED_LDAP_GROUP,
+            data: key,
+        });
 
         return {data: true};
     };
@@ -300,18 +252,13 @@ export function unlinkLdapGroup(key: string): ActionFunc {
 export function getSamlCertificateStatus(): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.getSamlCertificateStatus,
-        onRequest: AdminTypes.SAML_CERT_STATUS_REQUEST,
-        onSuccess: [AdminTypes.RECEIVED_SAML_CERT_STATUS, AdminTypes.SAML_CERT_STATUS_SUCCESS],
-        onFailure: AdminTypes.SAML_CERT_STATUS_FAILURE,
+        onSuccess: [AdminTypes.RECEIVED_SAML_CERT_STATUS],
     });
 }
 
 export function uploadPublicSamlCertificate(fileData: File): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.uploadPublicSamlCertificate,
-        onRequest: AdminTypes.UPLOAD_SAML_PUBLIC_REQUEST,
-        onSuccess: AdminTypes.UPLOAD_SAML_PUBLIC_SUCCESS,
-        onFailure: AdminTypes.UPLOAD_SAML_PUBLIC_FAILURE,
         params: [
             fileData,
         ],
@@ -321,9 +268,6 @@ export function uploadPublicSamlCertificate(fileData: File): ActionFunc {
 export function uploadPrivateSamlCertificate(fileData: File): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.uploadPrivateSamlCertificate,
-        onRequest: AdminTypes.UPLOAD_SAML_PRIVATE_REQUEST,
-        onSuccess: AdminTypes.UPLOAD_SAML_PRIVATE_SUCCESS,
-        onFailure: AdminTypes.UPLOAD_SAML_PRIVATE_FAILURE,
         params: [
             fileData,
         ],
@@ -333,7 +277,6 @@ export function uploadPrivateSamlCertificate(fileData: File): ActionFunc {
 export function uploadPublicLdapCertificate(fileData: File): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.uploadPublicLdapCertificate,
-        onSuccess: AdminTypes.UPLOAD_LDAP_PUBLIC_SUCCESS,
         params: [
             fileData,
         ],
@@ -343,7 +286,6 @@ export function uploadPublicLdapCertificate(fileData: File): ActionFunc {
 export function uploadPrivateLdapCertificate(fileData: File): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.uploadPrivateLdapCertificate,
-        onSuccess: AdminTypes.UPLOAD_LDAP_PRIVATE_SUCCESS,
         params: [
             fileData,
         ],
@@ -353,9 +295,6 @@ export function uploadPrivateLdapCertificate(fileData: File): ActionFunc {
 export function uploadIdpSamlCertificate(fileData: File): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.uploadIdpSamlCertificate,
-        onRequest: AdminTypes.UPLOAD_SAML_IDP_REQUEST,
-        onSuccess: AdminTypes.UPLOAD_SAML_IDP_SUCCESS,
-        onFailure: AdminTypes.UPLOAD_SAML_IDP_FAILURE,
         params: [
             fileData,
         ],
@@ -365,50 +304,36 @@ export function uploadIdpSamlCertificate(fileData: File): ActionFunc {
 export function removePublicSamlCertificate(): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.deletePublicSamlCertificate,
-        onRequest: AdminTypes.DELETE_SAML_PUBLIC_REQUEST,
-        onSuccess: AdminTypes.DELETE_SAML_PUBLIC_SUCCESS,
-        onFailure: AdminTypes.DELETE_SAML_PUBLIC_FAILURE,
     });
 }
 
 export function removePrivateSamlCertificate(): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.deletePrivateSamlCertificate,
-        onRequest: AdminTypes.DELETE_SAML_PRIVATE_REQUEST,
-        onSuccess: AdminTypes.DELETE_SAML_PRIVATE_SUCCESS,
-        onFailure: AdminTypes.DELETE_SAML_PRIVATE_FAILURE,
     });
 }
 
 export function removePublicLdapCertificate(): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.deletePublicLdapCertificate,
-        onSuccess: AdminTypes.DELETE_LDAP_PUBLIC_SUCCESS,
     });
 }
 
 export function removePrivateLdapCertificate(): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.deletePrivateLdapCertificate,
-        onSuccess: AdminTypes.DELETE_LDAP_PRIVATE_SUCCESS,
     });
 }
 
 export function removeIdpSamlCertificate(): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.deleteIdpSamlCertificate,
-        onRequest: AdminTypes.DELETE_SAML_IDP_REQUEST,
-        onSuccess: AdminTypes.DELETE_SAML_IDP_SUCCESS,
-        onFailure: AdminTypes.DELETE_SAML_IDP_FAILURE,
     });
 }
 
-export function testElasticsearch(config: any): ActionFunc {
+export function testElasticsearch(config: unknown): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.testElasticsearch,
-        onRequest: AdminTypes.TEST_ELASTICSEARCH_REQUEST,
-        onSuccess: AdminTypes.TEST_ELASTICSEARCH_SUCCESS,
-        onFailure: AdminTypes.TEST_ELASTICSEARCH_FAILURE,
         params: [
             config,
         ],
@@ -418,18 +343,12 @@ export function testElasticsearch(config: any): ActionFunc {
 export function purgeElasticsearchIndexes(): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.purgeElasticsearchIndexes,
-        onRequest: AdminTypes.PURGE_ELASTICSEARCH_INDEXES_REQUEST,
-        onSuccess: AdminTypes.PURGE_ELASTICSEARCH_INDEXES_SUCCESS,
-        onFailure: AdminTypes.PURGE_ELASTICSEARCH_INDEXES_FAILURE,
     });
 }
 
 export function uploadLicense(fileData: File): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.uploadLicense,
-        onRequest: AdminTypes.UPLOAD_LICENSE_REQUEST,
-        onSuccess: AdminTypes.UPLOAD_LICENSE_SUCCESS,
-        onFailure: AdminTypes.UPLOAD_LICENSE_FAILURE,
         params: [
             fileData,
         ],
@@ -439,9 +358,6 @@ export function uploadLicense(fileData: File): ActionFunc {
 export function removeLicense(): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.removeLicense,
-        onRequest: AdminTypes.REMOVE_LICENSE_REQUEST,
-        onSuccess: AdminTypes.REMOVE_LICENSE_SUCCESS,
-        onFailure: AdminTypes.REMOVE_LICENSE_FAILURE,
     });
 }
 
@@ -451,7 +367,7 @@ export function getPrevTrialLicense(): ActionFunc {
         try {
             data = await Client4.getPrevTrialLicense();
         } catch (error) {
-            forceLogoutIfNecessary(error, dispatch, getState);
+            forceLogoutIfNecessary(error as ServerError, dispatch, getState);
             return {error};
         }
 
@@ -462,26 +378,20 @@ export function getPrevTrialLicense(): ActionFunc {
 
 export function getAnalytics(name: string, teamId = ''): ActionFunc {
     return async (dispatch: DispatchFunc, getState: GetStateFunc) => {
-        dispatch({type: AdminTypes.GET_ANALYTICS_REQUEST, data: null});
-
         let data;
         try {
             data = await Client4.getAnalytics(name, teamId);
         } catch (error) {
-            forceLogoutIfNecessary(error, dispatch, getState);
-            dispatch({type: AdminTypes.GET_ANALYTICS_FAILURE, error});
-            dispatch(logError(error));
+            forceLogoutIfNecessary(error as ServerError, dispatch, getState);
+            dispatch(logError(error as ServerError));
             return {error};
         }
 
-        const actions: AnyAction[] = [{type: AdminTypes.GET_ANALYTICS_SUCCESS, data: null}];
         if (teamId === '') {
-            actions.push({type: AdminTypes.RECEIVED_SYSTEM_ANALYTICS, data, name});
+            dispatch({type: AdminTypes.RECEIVED_SYSTEM_ANALYTICS, data, name});
         } else {
-            actions.push({type: AdminTypes.RECEIVED_TEAM_ANALYTICS, data, name, teamId});
+            dispatch({type: AdminTypes.RECEIVED_TEAM_ANALYTICS, data, name, teamId});
         }
-
-        dispatch(batchActions(actions));
 
         return {data};
     };
@@ -509,21 +419,14 @@ export function getUsersPerDayAnalytics(teamId = ''): ActionFunc {
 
 export function uploadPlugin(fileData: File, force = false): ActionFunc {
     return async (dispatch: DispatchFunc, getState: GetStateFunc) => {
-        dispatch({type: AdminTypes.UPLOAD_PLUGIN_REQUEST, data: null});
-
         let data;
         try {
             data = await Client4.uploadPlugin(fileData, force);
         } catch (error) {
-            forceLogoutIfNecessary(error, dispatch, getState);
-            dispatch({type: AdminTypes.UPLOAD_PLUGIN_FAILURE, error});
-            dispatch(logError(error));
+            forceLogoutIfNecessary(error as ServerError, dispatch, getState);
+            dispatch(logError(error as ServerError));
             return {error};
         }
-
-        dispatch(batchActions([
-            {type: AdminTypes.UPLOAD_PLUGIN_SUCCESS, data: null},
-        ]));
 
         return {data};
     };
@@ -531,19 +434,14 @@ export function uploadPlugin(fileData: File, force = false): ActionFunc {
 
 export function installPluginFromUrl(url: string, force = false): ActionFunc {
     return async (dispatch, getState) => {
-        dispatch({type: AdminTypes.INSTALL_PLUGIN_FROM_URL_REQUEST, data: null});
-
         let data;
         try {
             data = await Client4.installPluginFromUrl(url, force);
         } catch (error) {
-            forceLogoutIfNecessary(error, dispatch, getState);
-            dispatch({type: AdminTypes.INSTALL_PLUGIN_FROM_URL_FAILURE, error});
-            dispatch(logError(error));
+            forceLogoutIfNecessary(error as ServerError, dispatch, getState);
+            dispatch(logError(error as ServerError));
             return {error};
         }
-
-        dispatch({type: AdminTypes.INSTALL_PLUGIN_FROM_URL_SUCCESS, data: null});
 
         return {data};
     };
@@ -552,38 +450,29 @@ export function installPluginFromUrl(url: string, force = false): ActionFunc {
 export function getPlugins(): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.getPlugins,
-        onRequest: AdminTypes.GET_PLUGIN_REQUEST,
-        onSuccess: [AdminTypes.GET_PLUGIN_SUCCESS, AdminTypes.RECEIVED_PLUGINS],
-        onFailure: AdminTypes.GET_PLUGIN_FAILURE,
+        onSuccess: [AdminTypes.RECEIVED_PLUGINS],
     });
 }
 
 export function getPluginStatuses(): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.getPluginStatuses,
-        onRequest: AdminTypes.GET_PLUGIN_STATUSES_REQUEST,
-        onSuccess: [AdminTypes.GET_PLUGIN_STATUSES_SUCCESS, AdminTypes.RECEIVED_PLUGIN_STATUSES],
-        onFailure: AdminTypes.GET_PLUGIN_STATUSES_FAILURE,
+        onSuccess: [AdminTypes.RECEIVED_PLUGIN_STATUSES],
     });
 }
 
 export function removePlugin(pluginId: string): ActionFunc {
     return async (dispatch: DispatchFunc, getState: GetStateFunc) => {
-        dispatch({type: AdminTypes.REMOVE_PLUGIN_REQUEST, data: pluginId});
-
         try {
             await Client4.removePlugin(pluginId);
         } catch (error) {
-            forceLogoutIfNecessary(error, dispatch, getState);
-            dispatch({type: AdminTypes.REMOVE_PLUGIN_FAILURE, error, data: pluginId});
-            dispatch(logError(error));
+            forceLogoutIfNecessary(error as ServerError, dispatch, getState);
+            dispatch(logError(error as ServerError));
             return {error};
         }
 
         dispatch(batchActions([
-            {type: AdminTypes.REMOVE_PLUGIN_SUCCESS, data: null},
             {type: AdminTypes.REMOVED_PLUGIN, data: pluginId},
-            {type: AdminTypes.DISABLE_PLUGIN_SUCCESS, data: null},
             {type: AdminTypes.DISABLED_PLUGIN, data: pluginId},
         ]));
 
@@ -593,22 +482,15 @@ export function removePlugin(pluginId: string): ActionFunc {
 
 export function enablePlugin(pluginId: string): ActionFunc {
     return async (dispatch: DispatchFunc, getState: GetStateFunc) => {
-        dispatch({type: AdminTypes.ENABLE_PLUGIN_REQUEST, data: pluginId});
-
         try {
             await Client4.enablePlugin(pluginId);
         } catch (error) {
-            forceLogoutIfNecessary(error, dispatch, getState);
-            dispatch(
-                {type: AdminTypes.ENABLE_PLUGIN_FAILURE, error, data: pluginId});
-            dispatch(logError(error));
+            forceLogoutIfNecessary(error as ServerError, dispatch, getState);
+            dispatch(logError(error as ServerError));
             return {error};
         }
 
-        dispatch(batchActions([
-            {type: AdminTypes.ENABLE_PLUGIN_SUCCESS, data: null},
-            {type: AdminTypes.ENABLED_PLUGIN, data: pluginId},
-        ]));
+        dispatch({type: AdminTypes.ENABLED_PLUGIN, data: pluginId});
 
         return {data: true};
     };
@@ -621,17 +503,12 @@ export function disablePlugin(pluginId: string): ActionFunc {
         try {
             await Client4.disablePlugin(pluginId);
         } catch (error) {
-            forceLogoutIfNecessary(error, dispatch, getState);
-            dispatch(
-                {type: AdminTypes.DISABLE_PLUGIN_FAILURE, error, data: pluginId});
-            dispatch(logError(error));
+            forceLogoutIfNecessary(error as ServerError, dispatch, getState);
+            dispatch(logError(error as ServerError));
             return {error};
         }
 
-        dispatch(batchActions([
-            {type: AdminTypes.DISABLE_PLUGIN_SUCCESS, data: null},
-            {type: AdminTypes.DISABLED_PLUGIN, data: pluginId},
-        ]));
+        dispatch({type: AdminTypes.DISABLED_PLUGIN, data: pluginId});
 
         return {data: true};
     };
@@ -650,7 +527,6 @@ export function getSamlMetadataFromIdp(samlMetadataURL: string): ActionFunc {
 export function setSamlIdpCertificateFromMetadata(certData: string): ActionFunc {
     return bindClientFunc({
         clientFunc: Client4.setSamlIdpCertificateFromMetadata,
-        onSuccess: AdminTypes.SET_SAML_IDP_SUCCESS,
         params: [
             certData,
         ],
@@ -664,8 +540,8 @@ export function sendWarnMetricAck(warnMetricId: string, forceAck: boolean) {
             await Client4.sendWarnMetricAck(warnMetricId, forceAck);
             return {data: true};
         } catch (e) {
-            dispatch(logError(e));
-            return {error: e.message};
+            dispatch(logError(e as ServerError));
+            return {error: (e as ServerError).message};
         }
     };
 }
@@ -676,7 +552,7 @@ export function getDataRetentionCustomPolicies(page = 0, perPage = 10): ActionFu
         try {
             data = await Client4.getDataRetentionCustomPolicies(page, perPage);
         } catch (error) {
-            forceLogoutIfNecessary(error, dispatch, getState);
+            forceLogoutIfNecessary(error as ServerError, dispatch, getState);
             dispatch(
                 {
                     type: AdminTypes.RECEIVED_DATA_RETENTION_CUSTOM_POLICIES,
@@ -700,7 +576,7 @@ export function getDataRetentionCustomPolicy(id: string): ActionFunc {
         try {
             data = await Client4.getDataRetentionCustomPolicy(id);
         } catch (error) {
-            forceLogoutIfNecessary(error, dispatch, getState);
+            forceLogoutIfNecessary(error as ServerError, dispatch, getState);
             dispatch(
                 {
                     type: AdminTypes.RECEIVED_DATA_RETENTION_CUSTOM_POLICY,
@@ -723,7 +599,7 @@ export function deleteDataRetentionCustomPolicy(id: string): ActionFunc {
         try {
             await Client4.deleteDataRetentionCustomPolicy(id);
         } catch (error) {
-            forceLogoutIfNecessary(error, dispatch, getState);
+            forceLogoutIfNecessary(error as ServerError, dispatch, getState);
             dispatch(
                 {
                     type: AdminTypes.DELETE_DATA_RETENTION_CUSTOM_POLICY_FAILURE,
@@ -749,7 +625,7 @@ export function getDataRetentionCustomPolicyTeams(id: string, page = 0, perPage:
         try {
             data = await Client4.getDataRetentionCustomPolicyTeams(id, page, perPage);
         } catch (error) {
-            forceLogoutIfNecessary(error, dispatch, getState);
+            forceLogoutIfNecessary(error as ServerError, dispatch, getState);
             dispatch(
                 {
                     type: AdminTypes.RECEIVED_DATA_RETENTION_CUSTOM_POLICY_TEAMS,
@@ -773,7 +649,7 @@ export function getDataRetentionCustomPolicyChannels(id: string, page = 0, perPa
         try {
             data = await Client4.getDataRetentionCustomPolicyChannels(id, page, perPage);
         } catch (error) {
-            forceLogoutIfNecessary(error, dispatch, getState);
+            forceLogoutIfNecessary(error as ServerError, dispatch, getState);
             dispatch(
                 {
                     type: AdminTypes.RECEIVED_DATA_RETENTION_CUSTOM_POLICY_CHANNELS,
@@ -797,7 +673,7 @@ export function searchDataRetentionCustomPolicyTeams(id: string, term: string, o
         try {
             data = await Client4.searchDataRetentionCustomPolicyTeams(id, term, opts);
         } catch (error) {
-            forceLogoutIfNecessary(error, dispatch, getState);
+            forceLogoutIfNecessary(error as ServerError, dispatch, getState);
             dispatch(
                 {
                     type: AdminTypes.RECEIVED_DATA_RETENTION_CUSTOM_POLICY_TEAMS_SEARCH,
@@ -821,7 +697,7 @@ export function searchDataRetentionCustomPolicyChannels(id: string, term: string
         try {
             data = await Client4.searchDataRetentionCustomPolicyChannels(id, term, opts);
         } catch (error) {
-            forceLogoutIfNecessary(error, dispatch, getState);
+            forceLogoutIfNecessary(error as ServerError, dispatch, getState);
             dispatch(
                 {
                     type: AdminTypes.RECEIVED_DATA_RETENTION_CUSTOM_POLICY_CHANNELS_SEARCH,
@@ -845,7 +721,7 @@ export function createDataRetentionCustomPolicy(policy: CreateDataRetentionCusto
         try {
             data = await Client4.createDataRetentionPolicy(policy);
         } catch (error) {
-            forceLogoutIfNecessary(error, dispatch, getState);
+            forceLogoutIfNecessary(error as ServerError, dispatch, getState);
             return {error};
         }
 
@@ -863,7 +739,7 @@ export function updateDataRetentionCustomPolicy(id: string, policy: CreateDataRe
         try {
             data = await Client4.updateDataRetentionPolicy(id, policy);
         } catch (error) {
-            forceLogoutIfNecessary(error, dispatch, getState);
+            forceLogoutIfNecessary(error as ServerError, dispatch, getState);
             return {error};
         }
 
@@ -891,7 +767,7 @@ export function removeDataRetentionCustomPolicyTeams(id: string, teams: string[]
         try {
             await Client4.removeDataRetentionPolicyTeams(id, teams);
         } catch (error) {
-            forceLogoutIfNecessary(error, dispatch, getState);
+            forceLogoutIfNecessary(error as ServerError, dispatch, getState);
             dispatch(
                 {
                     type: AdminTypes.REMOVE_DATA_RETENTION_CUSTOM_POLICY_TEAMS_FAILURE,
@@ -927,7 +803,7 @@ export function removeDataRetentionCustomPolicyChannels(id: string, channels: st
         try {
             await Client4.removeDataRetentionPolicyChannels(id, channels);
         } catch (error) {
-            forceLogoutIfNecessary(error, dispatch, getState);
+            forceLogoutIfNecessary(error as ServerError, dispatch, getState);
             dispatch(
                 {
                     type: AdminTypes.REMOVE_DATA_RETENTION_CUSTOM_POLICY_CHANNELS_FAILURE,

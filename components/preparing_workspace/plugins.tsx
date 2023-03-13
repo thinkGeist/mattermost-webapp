@@ -10,9 +10,11 @@ import MultiSelectCards from 'components/common/multi_select_cards';
 
 import GithubSVG from 'components/common/svg_images_components/github_svg';
 import GitlabSVG from 'components/common/svg_images_components/gitlab_svg';
+import CelebrateSVG from 'components/common/svg_images_components/celebrate_svg';
 import JiraSVG from 'components/common/svg_images_components/jira_svg';
 import ZoomSVG from 'components/common/svg_images_components/zoom_svg';
 import TodoSVG from 'components/common/svg_images_components/todo_svg';
+import ExternalLink from 'components/external_link';
 
 import {Animations, mapAnimationReasonToClass, Form, PreparingWorkspacePageProps} from './steps';
 
@@ -56,13 +58,20 @@ const Plugins = (props: Props) => {
                     <Title>
                         <FormattedMessage
                             id={'onboarding_wizard.plugins.title'}
-                            defaultMessage='What tools do you want to connect?'
+                            defaultMessage='Welcome to Mattermost!'
                         />
+                        <div className='subtitle'>
+                            <CelebrateSVG/>
+                            <FormattedMessage
+                                id={'onboarding_wizard.plugins.subtitle'}
+                                defaultMessage='(almost there!)'
+                            />
+                        </div>
                     </Title>
                     <Description>
                         <FormattedMessage
                             id={'onboarding_wizard.plugins.description'}
-                            defaultMessage={'Choose the tools you work with, and we’ll add them to your workspace. Additional set up may be needed later.'}
+                            defaultMessage={'Mattermost is better when integrated with the tools your team uses for collaboration. Popular tools are below, select the ones your team uses and we\'ll add them to your workspace. Additional set up may be needed later.'}
                         />
                     </Description>
                     <PageBody>
@@ -134,13 +143,12 @@ const Plugins = (props: Props) => {
                                 values={{
                                     a: (chunks: React.ReactNode | React.ReactNodeArray) => (
                                         <strong>
-                                            <a
+                                            <ExternalLink
                                                 href='https://mattermost.com/marketplace/'
-                                                target='_blank'
-                                                rel='noreferrer'
+                                                location='preparing_workspace_plugins'
                                             >
                                                 {chunks}
-                                            </a>
+                                            </ExternalLink>
                                         </strong>
                                     ),
                                 }}

@@ -85,9 +85,9 @@ describe('Search', () => {
             cy.visit(`/${testTeam.name}/messages/${channel.name}`);
 
             // # Post file to group
-            cy.get('#centerChannelFooter').find('#fileUploadInput').attachFile('word-file.doc');
+            cy.get('#advancedTextEditorCell').find('#fileUploadInput').attachFile('word-file.doc');
             cy.get('.post-image__thumbnail').should('be.visible');
-            cy.get('#post_textbox').should('be.visible').clear().type('{enter}');
+            cy.uiGetPostTextBox().clear().type('{enter}');
 
             //# Type "in:" text in search input
             cy.get('#searchBox').type('in:');
@@ -114,7 +114,7 @@ describe('Search', () => {
 
             // * Should return exactly one result from the group channel and matches the message
             cy.findAllByTestId('search-item-container').should('be.visible').and('have.length', 1).within(() => {
-                cy.get('.Badge').should('be.visible').and('have.text', 'Group Message');
+                cy.get('.Tag').should('be.visible').and('have.text', 'Group Message');
                 cy.get('.fileDataName').should('be.visible').and('have.text', 'word-file.doc');
             });
         });

@@ -26,7 +26,6 @@ describe('Verify Accessibility Support in different sections in Settings and Pro
         security: [
             {key: 'password', label: 'Password', type: 'text'},
             {key: 'mfa', label: 'Multi-factor Authentication', type: 'optional'},
-            {key: 'signin', label: 'Sign-in Method', type: 'optional'},
         ],
     };
 
@@ -43,6 +42,7 @@ describe('Verify Accessibility Support in different sections in Settings and Pro
             {key: 'clock', label: 'Clock Display', type: 'radio'},
             {key: 'name_format', label: 'Teammate Name Display', type: 'none'},
             {key: 'availabilityStatus', label: 'Show online availability on profile images', type: 'radio'},
+            {key: 'lastactive', label: 'Share last active time', type: 'radio'},
             {key: 'timezone', label: 'Timezone', type: 'none'},
             {key: 'collapse', label: 'Default Appearance of Image Previews', type: 'radio'},
             {key: 'message_display', label: 'Message Display', type: 'radio'},
@@ -59,10 +59,13 @@ describe('Verify Accessibility Support in different sections in Settings and Pro
             {key: 'advancedCtrlSend', label: `Send Messages on ${isMac() ? '⌘+ENTER' : 'CTRL+ENTER'}`, type: 'radio'},
             {key: 'formatting', label: 'Enable Post Formatting', type: 'radio'},
             {key: 'joinLeave', label: 'Enable Join/Leave Messages', type: 'radio'},
-            {key: 'advancedPreviewFeatures', label: 'Preview Pre-release Features', type: 'checkbox'},
+
+            // As only setting in advancedPreviewFeatures was related to editor preview this isn't required at the moment,
+            // may later on we can add it if we add more settings inside it
+            // {key: 'advancedPreviewFeatures', label: 'Preview Pre-release Features', type: 'checkbox'},
         ],
     };
-
+    let url;
     before(() => {
         // # Update Configs
         cy.apiUpdateConfig({
@@ -79,6 +82,7 @@ describe('Verify Accessibility Support in different sections in Settings and Pro
 
         // # Login as test user and visit off-topic
         cy.apiInitSetup({loginAfter: true}).then(({offTopicUrl}) => {
+            url = offTopicUrl;
             cy.visit(offTopicUrl);
             cy.postMessage('hello');
         });
@@ -91,36 +95,35 @@ describe('Verify Accessibility Support in different sections in Settings and Pro
 
     it('MM-T1465_1 Verify Label & Tab behavior in section links', () => {
         // * Verify aria-label and tab support in section of Account settings modal
-        cy.uiOpenProfileModal().then(() => {
-            cy.findByRole('button', {name: 'profile settings'}).focus();
-            cy.focused().should('have.attr', 'aria-label', 'profile settings').tab();
-            cy.focused().should('have.attr', 'aria-label', 'security').tab();
-            cy.uiClose();
+        cy.uiOpenProfileModal();
+        cy.findByRole('tab', {name: 'profile settings'}).should('be.visible').focus().should('be.focused');
+        ['profile settings', 'security'].forEach((text) => {
+            // * Verify aria-label on each tab and it supports navigating to the next tab with arrow keys
+            cy.focused().should('have.attr', 'aria-label', text).type('{downarrow}');
         });
+        cy.uiClose();
 
         // * Verify aria-label and tab support in section of Settings modal
-        cy.uiOpenSettingsModal().then(() => {
-            cy.findByRole('button', {name: 'notifications'}).focus();
-            cy.focused().should('have.attr', 'aria-label', 'notifications').tab();
-            cy.focused().should('have.attr', 'aria-label', 'display').tab();
-            cy.focused().should('have.attr', 'aria-label', 'sidebar').tab();
-            cy.focused().should('have.attr', 'aria-label', 'advanced').tab();
+        cy.uiOpenSettingsModal();
+        cy.findByRole('tab', {name: 'notifications'}).should('be.visible').focus().should('be.focused');
+        ['notifications', 'display', 'sidebar', 'advanced'].forEach((text) => {
+            // * Verify aria-label on each tab and it supports navigating to the next tab with arrow keys
+            cy.focused().should('have.attr', 'aria-label', text).type('{downarrow}');
         });
     });
 
     it('MM-T1465_2 Verify Accessibility Support in each section in Settings and Profile Dialog', () => {
+        cy.visit(url);
+
         // # Open account settings modal
         cy.uiOpenProfileModal();
 
         // * Verify if the focus goes to the individual fields in Profile section
-        cy.findByRole('button', {name: 'profile settings'}).click();
-        cy.findByRole('button', {name: 'security'}).focus();
-        cy.focused().should('have.attr', 'aria-label', 'security').tab();
+        cy.findByRole('tab', {name: 'profile settings'}).click().tab();
         verifySettings(accountSettings.profile);
 
         // * Verify if the focus goes to the individual fields in Security section
-        cy.findByRole('button', {name: 'security'}).click().focus();
-        cy.focused().should('have.attr', 'aria-label', 'security').tab();
+        cy.findByRole('tab', {name: 'security'}).click().tab();
         verifySettings(accountSettings.security);
         cy.uiClose();
 
@@ -128,30 +131,24 @@ describe('Verify Accessibility Support in different sections in Settings and Pro
         cy.uiOpenSettingsModal();
 
         // * Verify if the focus goes to the individual fields in Notifications section
-        cy.findByRole('button', {name: 'notifications'}).click();
-        cy.findByRole('button', {name: 'advanced'}).focus();
-        cy.focused().should('have.attr', 'aria-label', 'advanced').tab();
+        cy.findByRole('tab', {name: 'notifications'}).click().tab();
         verifySettings(settings.notifications);
 
         // // * Verify if the focus goes to the individual fields in Display section
-        cy.findByRole('button', {name: 'display'}).click();
-        cy.findByRole('button', {name: 'advanced'}).focus();
-        cy.focused().should('have.attr', 'aria-label', 'advanced').tab();
+        cy.findByRole('tab', {name: 'display'}).click().tab();
         verifySettings(settings.display);
 
         // // * Verify if the focus goes to the individual fields in Sidebar section
-        cy.findByRole('button', {name: 'sidebar'}).click();
-        cy.findByRole('button', {name: 'advanced'}).focus();
-        cy.focused().should('have.attr', 'aria-label', 'advanced').tab();
+        cy.findByRole('tab', {name: 'sidebar'}).click().tab();
         verifySettings(settings.sidebar);
 
         // // * Verify if the focus goes to the individual fields in Advanced section
-        cy.findByRole('button', {name: 'advanced'}).click().focus();
-        cy.focused().should('have.attr', 'aria-label', 'advanced').tab();
+        cy.findByRole('tab', {name: 'advanced'}).click().tab();
         verifySettings(settings.advanced);
     });
 
     it('MM-T1481 Verify Correct Radio button behavior in Settings and Profile', () => {
+        cy.visit(url);
         cy.uiOpenSettingsModal();
 
         cy.get('#notificationsButton').click();
@@ -162,6 +159,7 @@ describe('Verify Accessibility Support in different sections in Settings and Pro
     });
 
     it('MM-T1482 Input fields in Settings and Profile should read labels', () => {
+        cy.visit(url);
         cy.uiOpenProfileModal();
 
         accountSettings.profile.forEach((section) => {
@@ -179,6 +177,7 @@ describe('Verify Accessibility Support in different sections in Settings and Pro
     });
 
     it('MM-T1485 Language dropdown should read labels', () => {
+        cy.visit(url);
         cy.uiOpenSettingsModal();
 
         cy.get('#displayButton').click();
@@ -189,33 +188,35 @@ describe('Verify Accessibility Support in different sections in Settings and Pro
         cy.get('#changeInterfaceLanguageLabel').should('be.visible').and('have.text', 'Change interface language');
 
         // # When enter key is pressed on dropdown, it should expand and collapse
-        cy.get('@inputEl').type('{enter}');
+        cy.get('@inputEl').typeWithForce('{enter}');
         cy.get('#displayLanguage>div').should('have.class', 'react-select__control--menu-is-open');
-        cy.get('@inputEl').type('{enter}');
+        cy.get('@inputEl').typeWithForce('{enter}');
         cy.get('#displayLanguage>div').should('not.have.class', 'react-select__control--menu-is-open');
 
         // # Press down arrow twice and check aria label
-        cy.get('@inputEl').type('{enter}');
-        cy.get('@inputEl').type('{downarrow}{downarrow}');
+        cy.get('@inputEl').typeWithForce('{enter}');
+        cy.get('@inputEl').typeWithForce('{downarrow}{downarrow}');
         cy.get('#displayLanguage>span').as('ariaEl').within(($el) => {
             cy.wrap($el).should('have.attr', 'aria-live', 'assertive');
             cy.get('#aria-context').should('contain', 'option English (Australia) focused').and('contain', 'Use Up and Down to choose options, press Enter to select the currently focused option, press Escape to exit the menu, press Tab to select the option and exit the menu.');
         });
 
         // # Check if language setting gets changed after user presses enter
-        cy.get('@inputEl').type('{enter}');
+        cy.get('@inputEl').typeWithForce('{enter}');
         cy.get('#displayLanguage').should('contain', 'English (Australia)');
         cy.get('@ariaEl').get('#aria-selection-event').should('contain', 'option English (Australia), selected');
 
         // # Press down arrow, then up arrow and press enter
-        cy.get('@inputEl').type('{downarrow}{downarrow}{downarrow}{uparrow}');
+        cy.get('@inputEl').typeWithForce('{downarrow}{downarrow}{downarrow}{uparrow}');
         cy.get('@ariaEl').get('#aria-context').should('contain', 'option English (US) focused');
-        cy.get('@inputEl').type('{enter}');
+        cy.get('@inputEl').typeWithForce('{enter}');
         cy.get('#displayLanguage').should('contain', 'English (US)');
         cy.get('@ariaEl').get('#aria-selection-event').should('contain', 'option English (US), selected');
     });
 
     it('MM-T1488 Profile Picture should read labels', () => {
+        cy.visit(url);
+
         // # Go to Edit Profile picture
         cy.uiOpenProfileModal();
         cy.get('#pictureEdit').click();
@@ -267,6 +268,8 @@ describe('Verify Accessibility Support in different sections in Settings and Pro
     });
 
     it('MM-T1496 Security Settings screen should read labels', () => {
+        cy.visit(url);
+
         // # Go to Security Settings
         cy.uiOpenProfileModal();
         cy.get('#securityButton').click();

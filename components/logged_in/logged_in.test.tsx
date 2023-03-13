@@ -24,10 +24,12 @@ describe('components/logged_in/LoggedIn', () => {
         actions: {
             autoUpdateTimezone: jest.fn(),
             getChannelURLAction: jest.fn(),
+            viewChannel: jest.fn(),
         },
         showTermsOfService: false,
         location: {
             pathname: '/',
+            search: '',
         },
     };
 
@@ -39,12 +41,7 @@ describe('components/logged_in/LoggedIn', () => {
 
         const wrapper = shallow(<LoggedIn {...props}>{children}</LoggedIn>);
 
-        expect(wrapper).toMatchInlineSnapshot(`
-            <LoadingScreen
-              position="relative"
-              style={Object {}}
-            />
-        `);
+        expect(wrapper).toMatchInlineSnapshot('<LoadingScreen />');
     });
 
     it('should redirect to mfa when required and not on /mfa/setup', () => {
@@ -68,6 +65,7 @@ describe('components/logged_in/LoggedIn', () => {
             mfaRequired: true,
             location: {
                 pathname: '/mfa/setup',
+                search: '',
             },
         };
 
@@ -86,6 +84,7 @@ describe('components/logged_in/LoggedIn', () => {
             mfaRequired: false,
             location: {
                 pathname: '/mfa/confirm',
+                search: '',
             },
         };
 
@@ -121,6 +120,7 @@ describe('components/logged_in/LoggedIn', () => {
             showTermsOfService: true,
             location: {
                 pathname: '/terms_of_service',
+                search: '',
             },
         };
 

@@ -97,7 +97,7 @@ describe('Leave an archived channel', () => {
             // # More channels modal opens
             cy.get('#moreChannelsModal').should('be.visible').within(() => {
                 // # Click on dropdown
-                cy.findByText('Show: Public Channels').should('be.visible').click();
+                cy.findByText('Channel Type: Public').should('be.visible').click();
 
                 // # Click archived channels
                 cy.findByText('Archived Channels').click();
@@ -106,7 +106,7 @@ describe('Leave an archived channel', () => {
                 cy.get('#moreChannelsList').should('contain', channel.display_name);
             });
 
-            cy.get('body').type('{esc}', {force: true});
+            cy.get('body').typeWithForce('{esc}');
         });
     });
 
@@ -143,9 +143,9 @@ describe('Leave an archived channel', () => {
         cy.get('#showMoreChannels').click();
 
         // # More channels modal opens
-        cy.get('.more-modal').should('be.visible').within(() => {
+        cy.get('#moreChannelsModal').should('be.visible').within(() => {
             // # Public channel list opens by default
-            cy.findByText('Show: Public Channels').should('be.visible').click();
+            cy.findByText('Channel Type: Public').should('be.visible').click();
 
             // # Click on archived channels
             cy.findByText('Archived Channels').click();
@@ -154,7 +154,7 @@ describe('Leave an archived channel', () => {
             cy.get('#moreChannelsList').should('contain', archivedPrivateChannel.name);
             cy.get('#moreChannelsList').should('contain', archivedPublicChannel.display_name);
         });
-        cy.get('body').type('{esc}', {force: true});
+        cy.get('body').typeWithForce('{esc}');
     });
 
     it('MM-T1700 - All archived public channels are shown Important', () => {
@@ -196,9 +196,9 @@ describe('Leave an archived channel', () => {
         cy.get('#showMoreChannels').click();
 
         // # More channels modal opens
-        cy.get('.more-modal').should('be.visible').within(() => {
+        cy.get('#moreChannelsModal').should('be.visible').within(() => {
             // # Public channels are shown by default
-            cy.findByText('Show: Public Channels').should('be.visible').click();
+            cy.findByText('Channel Type: Public').should('be.visible').click();
 
             // # Go to archived channels
             cy.findByText('Archived Channels').click();
@@ -207,7 +207,7 @@ describe('Leave an archived channel', () => {
             cy.get('#moreChannelsList').should('contain', archivedPublicChannel1.display_name);
             cy.get('#moreChannelsList').should('contain', archivedPublicChannel2.display_name);
         });
-        cy.get('body').type('{esc}', {force: true});
+        cy.get('body').typeWithForce('{esc}');
     });
 
     it('MM-T1701 - Only Private channels you are a member of are displayed', () => {
@@ -250,9 +250,9 @@ describe('Leave an archived channel', () => {
         cy.get('#showMoreChannels').click();
 
         // # More channels modal opens
-        cy.get('.more-modal').should('be.visible').within(() => {
+        cy.get('#moreChannelsModal').should('be.visible').within(() => {
             // # Show public channels is visible by default
-            cy.findByText('Show: Public Channels').should('be.visible').click();
+            cy.findByText('Channel Type: Public').should('be.visible').click();
 
             // # Go to archived channels
             cy.findByText('Archived Channels').click();
@@ -261,7 +261,7 @@ describe('Leave an archived channel', () => {
             cy.get('#moreChannelsList').should('contain', archivedPrivateChannel1.name);
             cy.get('#moreChannelsList').should('not.contain', archivedPrivateChannel2.name);
         });
-        cy.get('body').type('{esc}', {force: true});
+        cy.get('body').typeWithForce('{esc}');
     });
 
     it('MM-T1703 - User can open archived channels', () => {
@@ -286,7 +286,7 @@ describe('Leave an archived channel', () => {
 
         // # More channels modal opens and lands on public channels
         cy.get('#moreChannelsModal').should('be.visible').within(() => {
-            cy.findByText('Show: Public Channels').should('be.visible').click();
+            cy.findByText('Channel Type: Public').should('be.visible').click();
 
             // # Go to archived channels
             cy.findByText('Archived Channels').click();
@@ -294,7 +294,7 @@ describe('Leave an archived channel', () => {
             // # More channels list should contain the archived channel
             cy.get('#moreChannelsList').should('contain', archivedChannel.display_name);
         });
-        cy.get('body').type('{esc}', {force: true});
+        cy.get('body').typeWithForce('{esc}');
     });
 
     it('MM-T1696 - When clicking Browse Channels no options for archived channels are shown when the feature is disabled', () => {
@@ -323,6 +323,6 @@ describe('Leave an archived channel', () => {
             cy.get('#channelsMoreDropdown').should('not.exist');
             cy.get('#moreChannelsList').should('not.contain', channel.name);
         });
-        cy.get('body').type('{esc}', {force: true});
+        cy.get('body').typeWithForce('{esc}');
     });
 });

@@ -1,10 +1,11 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-/* eslint-disable react/no-string-refs */
 
 import React from 'react';
 import {Modal} from 'react-bootstrap';
 import {FormattedMessage} from 'react-intl';
+
+import BotTag from 'components/widgets/tag/bot_tag';
 
 import {Client4} from 'mattermost-redux/client';
 import {General} from 'mattermost-redux/constants';
@@ -14,9 +15,9 @@ import * as UserUtils from 'mattermost-redux/utils/user_utils';
 
 import {trackEvent} from 'actions/telemetry_actions.jsx';
 
-import BotBadge from 'components/widgets/badges/bot_badge';
 import Avatar from 'components/widgets/users/avatar';
 import {isSuccess} from 'types/actions';
+import ExternalLink from 'components/external_link';
 
 export type Props = {
     show: boolean;
@@ -171,13 +172,12 @@ export default class ManageRolesModal extends React.PureComponent<Props, State> 
                             defaultMessage='Select additional permissions for the account. <link>Read more about roles and permissions</link>.'
                             values={{
                                 link: (msg: React.ReactNode) => (
-                                    <a
+                                    <ExternalLink
                                         href='https://developers.mattermost.com/integrate/admin-guide/admin-personal-access-token/'
-                                        target='_blank'
-                                        rel='noreferrer'
+                                        location='manage_roles_modal'
                                     >
                                         {msg}
-                                    </a>
+                                    </ExternalLink>
                                 ),
                             }}
                         />
@@ -186,7 +186,6 @@ export default class ManageRolesModal extends React.PureComponent<Props, State> 
                         <label>
                             <input
                                 type='checkbox'
-                                ref='postall'
                                 checked={this.state.hasPostAllRole || this.state.isSystemAdmin}
                                 disabled={this.state.isSystemAdmin}
                                 onChange={this.handlePostAllChange}
@@ -207,7 +206,6 @@ export default class ManageRolesModal extends React.PureComponent<Props, State> 
                         <label>
                             <input
                                 type='checkbox'
-                                ref='postallpublic'
                                 checked={this.state.hasPostAllPublicRole || this.state.hasPostAllRole || this.state.isSystemAdmin}
                                 disabled={this.state.hasPostAllRole || this.state.isSystemAdmin}
                                 onChange={this.handlePostAllPublicChange}
@@ -245,7 +243,6 @@ export default class ManageRolesModal extends React.PureComponent<Props, State> 
                             <label>
                                 <input
                                     type='checkbox'
-                                    ref='postall'
                                     checked={this.state.hasUserAccessTokenRole || this.state.isSystemAdmin}
                                     disabled={this.state.isSystemAdmin}
                                     onChange={this.handleUserAccessTokenChange}
@@ -255,13 +252,12 @@ export default class ManageRolesModal extends React.PureComponent<Props, State> 
                                     defaultMessage='Allow this account to generate <link>personal access tokens</link>.'
                                     values={{
                                         link: (msg: React.ReactNode) => (
-                                            <a
+                                            <ExternalLink
                                                 href='https://developers.mattermost.com/integrate/admin-guide/admin-personal-access-token'
-                                                target='_blank'
-                                                rel='noreferrer'
+                                                location='manage_roles_modal'
                                             >
                                                 {msg}
-                                            </a>
+                                            </ExternalLink>
                                         ),
                                     }}
                                 />
@@ -297,10 +293,7 @@ export default class ManageRolesModal extends React.PureComponent<Props, State> 
                     <div className='manage-teams__info'>
                         <div className='manage-teams__name'>
                             {name}
-                            <BotBadge
-                                show={Boolean(user.is_bot)}
-                                className='badge-admin'
-                            />
+                            {user.is_bot && <BotTag/>}
                         </div>
                         <div className='manage-teams__email'>
                             {email}
@@ -394,4 +387,3 @@ export default class ManageRolesModal extends React.PureComponent<Props, State> 
         );
     }
 }
-/* eslint-enable react/no-string-refs */

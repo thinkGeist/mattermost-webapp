@@ -1,5 +1,6 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
+
 import React, {useEffect, useLayoutEffect, useState} from 'react';
 import {Instance} from '@popperjs/core';
 
@@ -40,9 +41,7 @@ const useResponsiveFormattingBar = (ref: React.RefObject<HTMLDivElement>): WideM
             return () => {};
         }
 
-        let sizeObserver: ResizeObserver | null = new ResizeObserver(() =>
-            handleResize(),
-        );
+        let sizeObserver: ResizeObserver | null = new ResizeObserver(handleResize);
 
         sizeObserver.observe(ref.current);
 

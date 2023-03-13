@@ -1,6 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+/* eslint-disable mattermost/use-external-link */
+
 import PropTypes from 'prop-types';
 import React from 'react';
 import classNames from 'classnames';
@@ -13,9 +15,11 @@ import {t} from 'utils/i18n';
 import LoadingImagePreview from 'components/loading_image_preview';
 import Tooltip from 'components/tooltip';
 import OverlayTrigger from 'components/overlay_trigger';
+import {getFileMiniPreviewUrl} from 'mattermost-redux/utils/file_utils';
 
 const MIN_IMAGE_SIZE = 48;
 const MIN_IMAGE_SIZE_FOR_INTERNAL_BUTTONS = 100;
+const MAX_IMAGE_HEIGHT = 350;
 
 // SizeAwareImage is a component used for rendering images where the dimensions of the image are important for
 // ensuring that the page is laid out correctly.
@@ -77,6 +81,11 @@ export default class SizeAwareImage extends React.PureComponent {
          * Action to fetch public link of an image from server.
          */
         getFilePublicLink: PropTypes.func,
+
+        /*
+         * Prevents display of utility buttons when image in a location that makes them inappropriate
+         */
+        hideUtilities: PropTypes.bool,
     }
 
     constructor(props) {
@@ -174,6 +183,7 @@ export default class SizeAwareImage extends React.PureComponent {
         Reflect.deleteProperty(props, 'handleSmallImageContainer');
         Reflect.deleteProperty(props, 'enablePublicLink');
         Reflect.deleteProperty(props, 'onClick');
+        Reflect.deleteProperty(props, 'hideUtilities');
         Reflect.deleteProperty(props, 'getFilePublicLink');
 
         let ariaLabelImage = localizeMessage('file_attachment.thumbnail', 'file thumbnail');
@@ -271,12 +281,12 @@ export default class SizeAwareImage extends React.PureComponent {
                 rootClose={true}
             >
                 <a
-                    href={this.isInternalImage ? fileURL : src}
-                    className='style--none size-aware-image__download'
                     target='_blank'
                     rel='noopener noreferrer'
+                    href={this.isInternalImage ? fileURL : src}
+                    className='style--none size-aware-image__download'
                     download={true}
-                    role={this.isInternalImage ? 'button' : false}
+                    role={this.isInternalImage ? 'button' : undefined}
                     aria-label={localizeMessage('single_image_view.download_tooltip', 'Download')}
                 >
                     <DownloadOutlineIcon
@@ -339,7 +349,7 @@ export default class SizeAwareImage extends React.PureComponent {
         }
 
         // handling external small images (OR) handling all large internal / large external images
-        const utilityButtonsWrapper = this.state.isSmallImage && !this.isInternalImage ? null :
+        const utilityButtonsWrapper = this.props.hideUtilities || (this.state.isSmallImage && !this.isInternalImage) ? null :
             (
                 <span
                     className={classNames('image-preview-utility-buttons-container', {
@@ -361,37 +371,67 @@ export default class SizeAwareImage extends React.PureComponent {
         );
     }
 
-    renderImageOrPlaceholder = () => {
+    renderImageOrFallback = () => {
         const {
             dimensions,
+            fileInfo,
         } = this.props;
 
-        let placeHolder;
+        let ariaLabelImage = localizeMessage('file_attachment.thumbnail', 'file thumbnail');
+        if (fileInfo) {
+            ariaLabelImage += ` ${fileInfo.name}`.toLowerCase();
+        }
+
+        let fallback;
 
         if (this.dimensionsAvailable(dimensions) && !this.state.loaded) {
-            placeHolder = (
-                <div
-                    className={`image-loading__container ${this.props.className}`}
-                    style={{maxWidth: dimensions.width}}
-                >
-                    {this.renderImageLoaderIfNeeded()}
-                    <svg
-                        xmlns='http://www.w3.org/2000/svg'
-                        viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
-                        style={{maxHeight: dimensions.height, maxWidth: dimensions.width, verticalAlign: 'middle'}}
-                    />
-                </div>
-            );
+            const ratio = dimensions.height > MAX_IMAGE_HEIGHT ? MAX_IMAGE_HEIGHT / dimensions.height : 1;
+            const height = dimensions.height * ratio;
+            const width = dimensions.width * ratio;
+
+            const miniPreview = getFileMiniPreviewUrl(fileInfo);
+
+            if (miniPreview) {
+                fallback = (
+                    <div
+                        className={`image-loading__container ${this.props.className}`}
+                        style={{maxWidth: dimensions.width}}
+                    >
+                        <img
+                            aria-label={ariaLabelImage}
+                            className={this.props.className}
+                            src={miniPreview}
+                            tabIndex='0'
+                            height={height}
+                            width={width}
+                        />
+                    </div>
+                );
+            } else {
+                fallback = (
+                    <div
+                        className={`image-loading__container ${this.props.className}`}
+                        style={{maxWidth: width}}
+                    >
+                        {this.renderImageLoaderIfNeeded()}
+                        <svg
+                            xmlns='http://www.w3.org/2000/svg'
+                            viewBox={`0 0 ${width} ${height}`}
+                            style={{maxHeight: height, maxWidth: width, verticalAlign: 'middle'}}
+                        />
+                    </div>
+                );
+            }
         }
 
         const shouldShowImg = !this.dimensionsAvailable(dimensions) || this.state.loaded;
 
         return (
             <React.Fragment>
-                {placeHolder}
+                {fallback}
                 <div
                     className='file-preview__button'
-                    style={{display: shouldShowImg ? 'initial' : 'none'}}
+                    style={{display: shouldShowImg ? 'inline-block' : 'none'}}
                 >
                     {this.renderImageWithContainerIfNeeded()}
                 </div>
@@ -436,7 +476,7 @@ export default class SizeAwareImage extends React.PureComponent {
 
     render() {
         return (
-            this.renderImageOrPlaceholder()
+            this.renderImageOrFallback()
         );
     }
 }

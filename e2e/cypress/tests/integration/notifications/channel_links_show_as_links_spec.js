@@ -59,7 +59,7 @@ describe('Notifications', () => {
                     });
 
                     // # As receiver, set status to offline and logout
-                    cy.findByLabelText('set status').should('be.visible').click();
+                    cy.uiGetSetStatusButton().click();
                     cy.findByText('Offline').should('be.visible').click();
                     cy.apiLogout();
 
@@ -116,7 +116,7 @@ describe('Notifications', () => {
                 );
                 verifyEmailBody(expectedEmailBody, body);
 
-                const permalink = body[3].split(' ')[3];
+                const permalink = body[3].split(' ')[4];
                 const permalinkPostId = permalink.split('/')[6];
 
                 // # Visit permalink (e.g. click on email link) then view in browser to proceed

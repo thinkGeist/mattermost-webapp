@@ -1,21 +1,21 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
+
 import React, {ComponentType} from 'react';
 
 import {screen} from '@testing-library/react';
 
-import configureStore from 'redux-mock-store';
 import {Provider} from 'react-redux';
 
 import {InsightsScopes} from 'utils/constants';
 import {CardSizes, InsightsWidgetTypes, TimeFrames} from '@mattermost/types/insights';
 import {renderWithIntl} from 'tests/react_testing_utils';
+import mockStore from 'tests/test_store';
 
 import widgetHoc from './widget_hoc';
 
 describe('components/activity_and_insights/insights/widget_hoc', () => {
     let TestComponent: ComponentType;
-    const mockStore = configureStore();
     const store = mockStore({});
 
     const props = {

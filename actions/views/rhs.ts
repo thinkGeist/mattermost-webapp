@@ -1,9 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-/* eslint-disable max-lines */
-
 import debounce from 'lodash/debounce';
+import {AnyAction} from 'redux';
 import {batchActions} from 'redux-batched-actions';
 
 import {SearchTypes} from 'mattermost-redux/action_types';
@@ -18,7 +17,7 @@ import * as PostActions from 'mattermost-redux/actions/posts';
 import {getCurrentUserId, getCurrentUserMentionKeys} from 'mattermost-redux/selectors/entities/users';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
-import {getCurrentChannelId, getCurrentChannelNameForSearchShortcut} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentChannelId, getCurrentChannelNameForSearchShortcut, getChannel as getChannelSelector} from 'mattermost-redux/selectors/entities/channels';
 import {getPost} from 'mattermost-redux/selectors/entities/posts';
 import {makeGetUserTimezone} from 'mattermost-redux/selectors/entities/timezone';
 import {getUserCurrentTimezone} from 'mattermost-redux/utils/timezone_utils';
@@ -32,10 +31,9 @@ import * as Utils from 'utils/utils';
 import {getBrowserUtcOffset, getUtcOffsetForTimeZone} from 'utils/timezone';
 import {RhsState} from 'types/store/rhs';
 import {GlobalState} from 'types/store';
-import {getPostsByIds} from 'mattermost-redux/actions/posts';
-import {unsetEditingPost} from '../post_actions';
-import {loadProfilesAndReloadChannelMembers} from '../user_actions';
-import {loadMyChannelMemberAndRole} from 'mattermost-redux/actions/channels';
+import {getPostsByIds, getPost as fetchPost} from 'mattermost-redux/actions/posts';
+
+import {getChannel} from 'mattermost-redux/actions/channels';
 
 function selectPostFromRightHandSideSearchWithPreviousState(post: Post, previousRhsState?: RhsState) {
     return async (dispatch: DispatchFunc, getState: GetStateFunc) => {
@@ -95,12 +93,24 @@ export function updateRhsState(rhsState: string, channelId?: string, previousRhs
     };
 }
 
+export function openShowEditHistory(post: Post) {
+    return {
+        type: ActionTypes.UPDATE_RHS_STATE,
+        state: RHSStates.EDIT_HISTORY,
+        postId: post.id,
+        channelId: post.channel_id,
+        timestamp: Date.now(),
+    };
+}
+
 export function goBack() {
     return async (dispatch: DispatchFunc, getState: GetStateFunc) => {
         const prevState = getPreviousRhsState(getState() as GlobalState);
+        const defaultTab = 'channel-info';
+
         dispatch({
             type: ActionTypes.RHS_GO_BACK,
-            state: prevState,
+            state: prevState || defaultTab,
         });
 
         return {data: true};
@@ -180,6 +190,7 @@ export function filterFilesSearchByExt(extensions: string[]) {
             type: ActionTypes.SET_FILES_FILTER_BY_EXT,
             data: extensions,
         });
+        return {data: true};
     };
 }
 
@@ -211,9 +222,6 @@ export function showRHSPlugin(pluggableId: string) {
 export function showChannelMembers(channelId: string, inEditingMode = false) {
     return async (dispatch: DispatchFunc, getState: GetStateFunc) => {
         const state = getState() as GlobalState;
-
-        dispatch(loadMyChannelMemberAndRole(channelId));
-        dispatch(loadProfilesAndReloadChannelMembers(channelId));
 
         if (inEditingMode) {
             await dispatch(setEditChannelMembers(true));
@@ -353,6 +361,7 @@ export function showChannelFiles(channelId: string) {
             state: RHSStates.CHANNEL_FILES,
             previousRhsState,
         });
+        dispatch(updateSearchType('files'));
 
         const results = await dispatch(performSearch('channel:' + channelId));
         const fileData = results instanceof Array ? results[0].data : null;
@@ -434,7 +443,7 @@ export function showChannelInfo(channelId: string) {
 
 export function closeRightHandSide() {
     return (dispatch: DispatchFunc) => {
-        dispatch(batchActions([
+        const actionsBatch: AnyAction[] = [
             {
                 type: ActionTypes.UPDATE_RHS_STATE,
                 state: null,
@@ -445,8 +454,9 @@ export function closeRightHandSide() {
                 channelId: '',
                 timestamp: 0,
             },
-            unsetEditingPost(),
-        ]));
+        ];
+
+        dispatch(batchActions(actionsBatch));
         return {data: true};
     };
 }
@@ -476,12 +486,38 @@ export function toggleRhsExpanded() {
     };
 }
 
+export function selectPostAndParentChannel(post: Post) {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc) => {
+        const channel = getChannelSelector(getState(), post.channel_id);
+        if (!channel) {
+            await dispatch(getChannel(post.channel_id));
+        }
+        return dispatch(selectPost(post));
+    };
+}
+
 export function selectPost(post: Post) {
     return {
         type: ActionTypes.SELECT_POST,
         postId: post.root_id || post.id,
         channelId: post.channel_id,
         timestamp: Date.now(),
+    };
+}
+
+export function selectPostById(postId: string) {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc) => {
+        const state = getState();
+        const post = getPost(state, postId) ?? (await dispatch(fetchPost(postId))).data;
+        if (post) {
+            const channel = getChannelSelector(state, post.channel_id);
+            if (!channel) {
+                await dispatch(getChannel(post.channel_id));
+            }
+            dispatch(selectPost(post));
+            return {data: true};
+        }
+        return {data: false};
     };
 }
 

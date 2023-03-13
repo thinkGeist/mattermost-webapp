@@ -9,8 +9,9 @@ import {UserProfile} from '@mattermost/types/users';
 import * as Utils from 'utils/utils';
 import {t} from 'utils/i18n';
 
-import FormattedMarkdownMessage from 'components/formatted_markdown_message.jsx';
+import FormattedMarkdownMessage from 'components/formatted_markdown_message';
 import LocalizedInput from 'components/localized_input/localized_input';
+import ExternalLink from 'components/external_link';
 
 type MFAControllerState = {
     enforceMultifactorAuthentication: boolean;
@@ -153,9 +154,28 @@ export default class Setup extends React.PureComponent<Props, State> {
                 >
                     {mfaRequired}
                     <p>
-                        <FormattedMarkdownMessage
+                        <FormattedMessage
                             id='mfa.setup.step1'
-                            defaultMessage="**Step 1: **On your phone, download Google Authenticator from [iTunes](!https://itunes.apple.com/us/app/google-authenticator/id388497605?mt=8') or [Google Play](!https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2&hl=en)"
+                            defaultMessage='<strong>Step 1: </strong>On your phone, download Google Authenticator from <linkiTunes>iTunes</linkiTunes> or <linkGooglePlay>Google Play</linkGooglePlay>'
+                            values={{
+                                strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
+                                linkiTunes: (msg: React.ReactNode) => (
+                                    <ExternalLink
+                                        href='https://itunes.apple.com/us/app/google-authenticator/id388497605?mt=8'
+                                        location='mfa_setup'
+                                    >
+                                        {msg}
+                                    </ExternalLink>
+                                ),
+                                linkGooglePlay: (msg: React.ReactNode) => (
+                                    <ExternalLink
+                                        href='https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2&hl=en'
+                                        location='mfa_setup'
+                                    >
+                                        {msg}
+                                    </ExternalLink>
+                                ),
+                            }}
                         />
                     </p>
                     <p>

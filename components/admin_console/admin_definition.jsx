@@ -1,15 +1,18 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
+
 /* eslint-disable max-lines */
 
 import React from 'react';
 import {FormattedMessage} from 'react-intl';
 
-import {RESOURCE_KEYS} from 'mattermost-redux/constants/permissions_sysconsole';
-import {LicenseSkus} from 'mattermost-redux/types/general';
+import {AccountMultipleOutlineIcon, ChartBarIcon, CogOutlineIcon, CreditCardOutlineIcon, FlaskOutlineIcon, FormatListBulletedIcon, InformationOutlineIcon, PowerPlugOutlineIcon, ServerVariantIcon, ShieldOutlineIcon, SitemapIcon, ProductsIcon} from '@mattermost/compass-icons/components';
 
-import {Constants, LegacyFreeProductIds} from 'utils/constants';
+import {RESOURCE_KEYS} from 'mattermost-redux/constants/permissions_sysconsole';
+
+import {Constants, CloudProducts, LicenseSkus} from 'utils/constants';
 import {isCloudFreePlan} from 'utils/cloud_utils';
+import {isCloudLicense} from 'utils/license_utils';
 import {getSiteURL} from 'utils/url';
 import {t} from 'utils/i18n';
 import {
@@ -25,8 +28,11 @@ import SystemAnalytics from 'components/analytics/system_analytics';
 import TeamAnalytics from 'components/analytics/team_analytics';
 import PluginManagement from 'components/admin_console/plugin_management';
 import CustomPluginSettings from 'components/admin_console/custom_plugin_settings';
+import RestrictedIndicator from 'components/widgets/menu/menu_items/restricted_indicator';
 
 import {trackEvent} from 'actions/telemetry_actions.jsx';
+
+import ExternalLink from 'components/external_link';
 
 import OpenIdConvert from './openid_convert';
 import Audits from './audits';
@@ -73,6 +79,7 @@ import {
     LDAPFeatureDiscovery,
     SAMLFeatureDiscovery,
     OpenIDFeatureDiscovery,
+    OpenIDCustomFeatureDiscovery,
     AnnouncementBannerFeatureDiscovery,
     ComplianceExportFeatureDiscovery,
     CustomTermsOfServiceFeatureDiscovery,
@@ -198,15 +205,16 @@ export const it = {
     configContains: (group, setting, word) => (config) => Boolean(config[group][setting]?.includes(word)),
     enterpriseReady: (config, state, license, enterpriseReady) => enterpriseReady,
     licensed: (config, state, license) => license.IsLicensed === 'true',
+    cloudLicensed: (config, state, license) => isCloudLicense(license),
     licensedForFeature: (feature) => (config, state, license) => license.IsLicensed && license[feature] === 'true',
     licensedForSku: (skuName) => (config, state, license) => license.IsLicensed && license.SkuShortName === skuName,
+    licensedForCloudStarter: (config, state, license) => isCloudLicense(license) && license.SkuShortName === LicenseSkus.Starter,
     hidePaymentInfo: (config, state, license, enterpriseReady, consoleAccess, cloud) => {
         const productId = cloud?.subscription?.product_id;
         const limits = cloud?.limits;
         const subscriptionProduct = cloud?.products?.[productId];
         const isCloudFreeProduct = isCloudFreePlan(subscriptionProduct, limits);
-        const isLegacyFreeUnpaid = Boolean(LegacyFreeProductIds[productId]) && !cloud.subscription?.is_legacy_cloud_paid_tier;
-        return isLegacyFreeUnpaid || cloud?.subscription?.is_free_trial === 'true' || isCloudFreeProduct;
+        return cloud?.subscription?.is_free_trial === 'true' || isCloudFreeProduct;
     },
     userHasReadPermissionOnResource: (key) => (config, state, license, enterpriseReady, consoleAccess) => consoleAccess?.read?.[key],
     userHasReadPermissionOnSomeResources: (key) => Object.values(key).some((resource) => it.userHasReadPermissionOnResource(resource)),
@@ -248,9 +256,30 @@ const usesLegacyOauth = (config, state, license, enterpriseReady, consoleAccess,
     )(config, state, license, enterpriseReady, consoleAccess, cloud);
 };
 
+const getRestrictedIndicator = (displayBlocked = false, minimumPlanRequiredForFeature = LicenseSkus.Professional) => ({
+    value: (cloud) => (
+        <RestrictedIndicator
+            useModal={false}
+            blocked={displayBlocked || !(cloud?.subscription?.is_free_trial === 'true')}
+            minimumPlanRequiredForFeature={minimumPlanRequiredForFeature}
+            tooltipMessageBlocked={{
+                id: t('admin.sidebar.restricted_indicator.tooltip.message.blocked'),
+                defaultMessage: 'This is {article} {minimumPlanRequiredForFeature} feature, available with an upgrade or free {trialLength}-day trial',
+            }}
+        />
+    ),
+    shouldDisplay: (license, subscriptionProduct) => displayBlocked || (isCloudLicense(license) && subscriptionProduct?.sku === CloudProducts.STARTER),
+});
+
 const AdminDefinition = {
     about: {
-        icon: 'fa-info-circle',
+        icon: (
+            <InformationOutlineIcon
+                size={16}
+                className={'category-icon fa'}
+                color={'currentColor'}
+            />
+        ),
         sectionTitle: t('admin.sidebar.about'),
         sectionTitleDefault: 'About',
         isHidden: it.any(
@@ -280,13 +309,23 @@ const AdminDefinition = {
         },
     },
     billing: {
-        icon: 'fa-credit-card', // TODO: Need compass icon
+        icon: (
+            <CreditCardOutlineIcon
+                size={16}
+                className={'category-icon fa'}
+                color={'currentColor'}
+            />
+        ),
         sectionTitle: t('admin.sidebar.billing'),
         sectionTitleDefault: 'Billing & Account',
         isHidden: it.any(
-            it.not(it.licensedForFeature('Cloud')),
-            it.configIsFalse('ExperimentalSettings', 'CloudBilling'),
+            it.not(it.enterpriseReady),
             it.not(it.userHasReadPermissionOnResource('billing')),
+            it.not(it.licensed),
+            it.all(
+                it.not(it.licensedForFeature('Cloud')),
+                it.configIsFalse('ServiceSettings', 'SelfHostedPurchase'),
+            ),
         ),
         subscription: {
             url: 'billing/subscription',
@@ -294,11 +333,16 @@ const AdminDefinition = {
             title_default: 'Subscription',
             searchableStrings: [
                 'admin.billing.subscription.title',
+                'admin.billing.subscription.deleteWorkspaceSection.title',
+                'admin.billing.subscription.deleteWorkspaceModal.deleteButton',
             ],
             schema: {
                 id: 'BillingSubscriptions',
                 component: BillingSubscriptions,
             },
+
+            // cloud only view
+            isHidden: it.not(it.licensedForFeature('Cloud')),
             isDisabled: it.not(it.userHasWritePermissionOnResource('billing')),
         },
         billing_history: {
@@ -325,6 +369,9 @@ const AdminDefinition = {
                 id: 'CompanyInfo',
                 component: CompanyInfo,
             },
+
+            // cloud only view
+            isHidden: it.not(it.licensedForFeature('Cloud')),
             isDisabled: it.not(it.userHasWritePermissionOnResource('billing')),
         },
         company_info_edit: {
@@ -333,13 +380,21 @@ const AdminDefinition = {
                 id: 'CompanyInfoEdit',
                 component: CompanyInfoEdit,
             },
+
+            // cloud only view
+            isHidden: it.not(it.licensedForFeature('Cloud')),
             isDisabled: it.not(it.userHasWritePermissionOnResource('billing')),
         },
         payment_info: {
             url: 'billing/payment_info',
             title: t('admin.sidebar.payment_info'),
             title_default: 'Payment Information',
-            isHidden: it.hidePaymentInfo,
+            isHidden: it.any(
+                it.hidePaymentInfo,
+
+                // cloud only view
+                it.not(it.licensedForFeature('Cloud')),
+            ),
             searchableStrings: [
                 'admin.billing.payment_info.title',
             ],
@@ -359,7 +414,13 @@ const AdminDefinition = {
         },
     },
     reporting: {
-        icon: 'fa-bar-chart',
+        icon: (
+            <ChartBarIcon
+                size={16}
+                className={'category-icon fa'}
+                color={'currentColor'}
+            />
+        ),
         sectionTitle: t('admin.sidebar.reporting'),
         sectionTitleDefault: 'Reporting',
         isHidden: it.not(it.userHasReadPermissionOnSomeResources(RESOURCE_KEYS.REPORTING)),
@@ -446,7 +507,13 @@ const AdminDefinition = {
         },
     },
     user_management: {
-        icon: 'fa-users',
+        icon: (
+            <AccountMultipleOutlineIcon
+                size={16}
+                className={'category-icon fa'}
+                color={'currentColor'}
+            />
+        ),
         sectionTitle: t('admin.sidebar.userManagement'),
         sectionTitleDefault: 'User Management',
         isHidden: it.not(it.userHasReadPermissionOnSomeResources(RESOURCE_KEYS.USER_MANAGEMENT)),
@@ -495,6 +562,7 @@ const AdminDefinition = {
                 id: 'Groups',
                 component: GroupSettings,
             },
+            restrictedIndicator: getRestrictedIndicator(),
         },
         groups_feature_discovery: {
             url: 'user_management/groups',
@@ -518,6 +586,7 @@ const AdminDefinition = {
                     },
                 ],
             },
+            restrictedIndicator: getRestrictedIndicator(true, LicenseSkus.Enterprise),
         },
         team_detail: {
             url: 'user_management/teams/:team_id',
@@ -631,6 +700,7 @@ const AdminDefinition = {
                 id: 'SystemRoles',
                 component: SystemRoles,
             },
+            restrictedIndicator: getRestrictedIndicator(),
         },
         system_roles_feature_discovery: {
             url: 'user_management/system_roles',
@@ -654,10 +724,17 @@ const AdminDefinition = {
                     },
                 ],
             },
+            restrictedIndicator: getRestrictedIndicator(true, LicenseSkus.Enterprise),
         },
     },
     environment: {
-        icon: 'fa-server',
+        icon: (
+            <ServerVariantIcon
+                size={16}
+                className={'category-icon fa'}
+                color={'currentColor'}
+            />
+        ),
         sectionTitle: t('admin.sidebar.environment'),
         sectionTitleDefault: 'Environment',
         isHidden: it.not(it.userHasReadPermissionOnSomeResources(RESOURCE_KEYS.ENVIRONMENT)),
@@ -861,8 +938,18 @@ const AdminDefinition = {
                         label: t('admin.service.managedResourcePaths'),
                         label_default: 'Managed Resource Paths:',
                         help_text: t('admin.service.managedResourcePathsDescription'),
-                        help_text_default: 'A comma-separated list of paths on the Mattermost server that are managed by another service. See [here](!https://docs.mattermost.com/install/desktop-managed-resources.html) for more information.',
-                        help_text_markdown: true,
+                        help_text_default: 'A comma-separated list of paths on the Mattermost server that are managed by another service. See <link>here</link> for more information.',
+                        help_text_markdown: false,
+                        help_text_values: {
+                            link: (msg) => (
+                                <ExternalLink
+                                    location='admin_console'
+                                    href='https://docs.mattermost.com/install/desktop-managed-resources.html'
+                                >
+                                    {msg}
+                                </ExternalLink>
+                            ),
+                        },
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.ENVIRONMENT.WEB_SERVER)),
                     },
                     {
@@ -1061,8 +1148,18 @@ const AdminDefinition = {
                         label: t('admin.image.extractContentTitle'),
                         label_default: 'Enable document search by content:',
                         help_text: t('admin.image.extractContentDescription'),
-                        help_text_markdown: true,
-                        help_text_default: 'When enabled, supported document types are searchable by their content. Search results for existing documents may be incomplete [until a data migration is executed](!https://www.mattermost.com/file-content-extraction).',
+                        help_text_markdown: false,
+                        help_text_default: 'When enabled, supported document types are searchable by their content. Search results for existing documents may be incomplete <link>until a data migration is executed</link>.',
+                        help_text_values: {
+                            link: (msg) => (
+                                <ExternalLink
+                                    location='admin_console'
+                                    href='https://www.mattermost.com/file-content-extraction'
+                                >
+                                    {msg}
+                                </ExternalLink>
+                            ),
+                        },
                         isDisabled: it.any(
                             it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.ENVIRONMENT.FILE_STORAGE)),
                         ),
@@ -1127,8 +1224,18 @@ const AdminDefinition = {
                         label: t('admin.image.amazonS3IdTitle'),
                         label_default: 'Amazon S3 Access Key ID:',
                         help_text: t('admin.image.amazonS3IdDescription'),
-                        help_text_markdown: true,
-                        help_text_default: '(Optional) Only required if you do not want to authenticate to S3 using an [IAM role](!https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2_instance-profiles.html). Enter the Access Key ID provided by your Amazon EC2 administrator.',
+                        help_text_default: '(Optional) Only required if you do not want to authenticate to S3 using an <link>IAM role</link>. Enter the Access Key ID provided by your Amazon EC2 administrator.',
+                        help_text_values: {
+                            link: (msg) => (
+                                <ExternalLink
+                                    location='admin_console'
+                                    href='https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2_instance-profiles.html'
+                                >
+                                    {msg}
+                                </ExternalLink>
+                            ),
+                        },
+                        help_text_markdown: false,
                         placeholder: t('admin.image.amazonS3IdExample'),
                         placeholder_default: 'E.g.: "AKIADTOVBGERKLCBV"',
                         isDisabled: it.any(
@@ -1185,16 +1292,15 @@ const AdminDefinition = {
                         help_text_default: 'When true, encrypt files in Amazon S3 using server-side encryption with Amazon S3-managed keys. See <link>documentation</link> to learn more.',
                         help_text_values: {
                             link: (msg) => (
-                                <a
+                                <ExternalLink
+                                    location='admin_console'
                                     href='https://docs.mattermost.com/configure/configuration-settings.html#session-lengths'
-                                    referrer='noreferrer'
-                                    target='_blank'
-                                    rel='noreferrer'
                                 >
                                     {msg}
-                                </a>
+                                </ExternalLink>
                             ),
                         },
+                        help_text_markdown: false,
                         isHidden: it.not(it.licensedForFeature('Compliance')),
                         isDisabled: it.any(
                             it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.ENVIRONMENT.FILE_STORAGE)),
@@ -1258,8 +1364,18 @@ const AdminDefinition = {
                         label: t('admin.image.proxyType'),
                         label_default: 'Image Proxy Type:',
                         help_text: t('admin.image.proxyTypeDescription'),
-                        help_text_default: 'Configure an image proxy to load all Markdown images through a proxy. The image proxy prevents users from making insecure image requests, provides caching for increased performance, and automates image adjustments such as resizing. See [documentation](!https://docs.mattermost.com/deploy/image-proxy.html) to learn more.',
-                        help_text_markdown: true,
+                        help_text_default: 'Configure an image proxy to load all Markdown images through a proxy. The image proxy prevents users from making insecure image requests, provides caching for increased performance, and automates image adjustments such as resizing. See <link>documentation</link> to learn more.',
+                        help_text_values: {
+                            link: (msg) => (
+                                <ExternalLink
+                                    location='admin_console'
+                                    href='https://docs.mattermost.com/deploy/image-proxy.html'
+                                >
+                                    {msg}
+                                </ExternalLink>
+                            ),
+                        },
+                        help_text_markdown: false,
                         options: [
                             {
                                 value: 'atmos/camo',
@@ -1727,8 +1843,18 @@ const AdminDefinition = {
                         label: t('admin.log.enableDiagnostics'),
                         label_default: 'Enable Diagnostics and Error Reporting:',
                         help_text: t('admin.log.enableDiagnosticsDescription'),
-                        help_text_default: 'Enable this feature to improve the quality and performance of Mattermost by sending error reporting and diagnostic information to Mattermost, Inc. Read our [privacy policy](!https://mattermost.com/privacy-policy/) to learn more.',
-                        help_text_markdown: true,
+                        help_text_default: 'Enable this feature to improve the quality and performance of Mattermost by sending error reporting and diagnostic information to Mattermost, Inc. Read our <link>privacy policy</link> to learn more.',
+                        help_text_markdown: false,
+                        help_text_values: {
+                            link: (msg) => (
+                                <ExternalLink
+                                    location='admin_console'
+                                    href='https://mattermost.com/privacy-policy/'
+                                >
+                                    {msg}
+                                </ExternalLink>
+                            ),
+                        },
                         onConfigSave: (displayVal, previousVal) => {
                             if (previousVal && previousVal !== displayVal) {
                                 trackEvent('ui', 'diagnostics_disabled');
@@ -1792,8 +1918,18 @@ const AdminDefinition = {
                         label: t('admin.metrics.enableTitle'),
                         label_default: 'Enable Performance Monitoring:',
                         help_text: t('admin.metrics.enableDescription'),
-                        help_text_default: 'When true, Mattermost will enable performance monitoring collection and profiling. Please see [documentation](!https://docs.mattermost.com/deployment/metrics.html) to learn more about configuring performance monitoring for Mattermost.',
-                        help_text_markdown: true,
+                        help_text_default: 'When true, Mattermost will enable performance monitoring collection and profiling. Please see <link>documentation</link> to learn more about configuring performance monitoring for Mattermost.',
+                        help_text_markdown: false,
+                        help_text_values: {
+                            link: (msg) => (
+                                <ExternalLink
+                                    location='admin_console'
+                                    href='https://docs.mattermost.com/deployment/metrics.html'
+                                >
+                                    {msg}
+                                </ExternalLink>
+                            ),
+                        },
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.ENVIRONMENT.PERFORMANCE_MONITORING)),
                     },
                     {
@@ -1838,7 +1974,7 @@ const AdminDefinition = {
                         label: t('admin.service.developerTitle'),
                         label_default: 'Enable Developer Mode: ',
                         help_text: t('admin.service.developerDesc'),
-                        help_text_default: 'When true, JavaScript errors are shown in a purple bar at the top of the user interface. Not recommended for use in production.',
+                        help_text_default: 'When true, JavaScript errors are shown in a purple bar at the top of the user interface. Not recommended for use in production. Changing this requires a server restart before taking effect.',
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.ENVIRONMENT.DEVELOPER)),
                     },
                     {
@@ -1847,7 +1983,7 @@ const AdminDefinition = {
                         label: t('admin.service.performanceDebuggingTitle'),
                         label_default: 'Enable Client Performance Debugging: ',
                         help_text: t('admin.service.performanceDebuggingDescription'),
-                        help_text_default: 'When true, users can access debugging settings for their account in **Settings > Advanced > Performance Debugging** to assist in diagnosing performance issues.',
+                        help_text_default: 'When true, users can access debugging settings for their account in **Settings > Advanced > Performance Debugging** to assist in diagnosing performance issues. Changing this requires a server restart before taking effect.',
                         help_text_markdown: true,
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.ENVIRONMENT.DEVELOPER)),
                     },
@@ -1859,8 +1995,18 @@ const AdminDefinition = {
                         placeholder: t('admin.service.internalConnectionsEx'),
                         placeholder_default: 'webhooks.internal.example.com 127.0.0.1 10.0.16.0/28',
                         help_text: t('admin.service.internalConnectionsDesc'),
-                        help_text_default: 'A whitelist of local network addresses that can be requested by the Mattermost server on behalf of a client. Care should be used when configuring this setting to prevent unintended access to your local network. See [documentation](!https://mattermost.com/pl/default-allow-untrusted-internal-connections) to learn more.',
-                        help_text_markdown: true,
+                        help_text_default: 'A whitelist of local network addresses that can be requested by the Mattermost server on behalf of a client. Care should be used when configuring this setting to prevent unintended access to your local network. See <link>documentation</link> to learn more. Changing this requires a server restart before taking effect.',
+                        help_text_values: {
+                            link: (msg) => (
+                                <ExternalLink
+                                    location='admin_console'
+                                    href='https://mattermost.com/pl/default-allow-untrusted-internal-connections'
+                                >
+                                    {msg}
+                                </ExternalLink>
+                            ),
+                        },
+                        help_text_markdown: false,
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.ENVIRONMENT.DEVELOPER)),
                     },
                 ],
@@ -1868,7 +2014,13 @@ const AdminDefinition = {
         },
     },
     site: {
-        icon: 'fa-cogs',
+        icon: (
+            <CogOutlineIcon
+                size={16}
+                className={'category-icon fa'}
+                color={'currentColor'}
+            />
+        ),
         sectionTitle: t('admin.sidebar.site'),
         sectionTitleDefault: 'Site Configuration',
         isHidden: it.not(it.userHasReadPermissionOnSomeResources(RESOURCE_KEYS.SITE)),
@@ -1900,9 +2052,7 @@ const AdminDefinition = {
                         label: t('admin.team.brandDescriptionTitle'),
                         label_default: 'Site Description: ',
                         help_text: t('admin.team.brandDescriptionHelp'),
-                        help_text_default: 'Description of service shown in login screens and UI. When not specified, "All team communication in one place, searchable and accessible anywhere" is displayed.',
-                        placeholder: t('web.root.signup_info'),
-                        placeholder_default: 'All team communication in one place, searchable and accessible anywhere',
+                        help_text_default: 'Displays as a title above the login form. When not specified, the phrase "Log in" is displayed.',
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.SITE.CUSTOMIZATION)),
                     },
                     {
@@ -2043,7 +2193,7 @@ const AdminDefinition = {
                         label: t('admin.general.localization.serverLocaleTitle'),
                         label_default: 'Default Server Language:',
                         help_text: t('admin.general.localization.serverLocaleDescription'),
-                        help_text_default: 'Default language for system messages. Changing this will require a server restart before taking effect.',
+                        help_text_default: 'Default language for system messages.',
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.SITE.LOCALIZATION)),
                     },
                     {
@@ -2061,8 +2211,19 @@ const AdminDefinition = {
                         label: t('admin.general.localization.availableLocalesTitle'),
                         label_default: 'Available Languages:',
                         help_text: t('admin.general.localization.availableLocalesDescription'),
-                        help_text_markdown: true,
-                        help_text_default: 'Set which languages are available for users in **Settings > Display > Language** (leave this field blank to have all supported languages available). If you\'re manually adding new languages, the **Default Client Language** must be added before saving this setting.\n \nWould like to help with translations? Join the [Mattermost Translation Server](!http://translate.mattermost.com/) to contribute.',
+                        help_text_markdown: false,
+                        help_text_default: 'Set which languages are available for users in <strong>Settings > Display > Language</strong> (leave this field blank to have all supported languages available). If you\'re manually adding new languages, the <strong>Default Client Language</strong> must be added before saving this setting.\n \nWould like to help with translations? Join the <link>Mattermost Translation Server</link> to contribute.',
+                        help_text_values: {
+                            link: (msg) => (
+                                <ExternalLink
+                                    location='admin_console'
+                                    href='http://translate.mattermost.com/'
+                                >
+                                    {msg}
+                                </ExternalLink>
+                            ),
+                            strong: (msg) => <strong>{msg}</strong>,
+                        },
                         multiple: true,
                         no_result: t('admin.general.localization.availableLocalesNoResults'),
                         no_result_default: 'No results found',
@@ -2158,7 +2319,10 @@ const AdminDefinition = {
                         label: t('admin.lockTeammateNameDisplay'),
                         label_default: 'Lock Teammate Name Display for all users: ',
                         help_text: t('admin.lockTeammateNameDisplayHelpText'),
-                        help_text_default: 'When true, disables users\' ability to change settings under Account Menu > Account Settings > Display > Teammate Name Display.',
+                        help_text_default: 'When true, disables users\' ability to change settings under <strong>Account Menu > Account Settings > Display > Teammate Name Display</strong>.',
+                        help_text_values: {
+                            strong: (msg) => <strong>{msg}</strong>,
+                        },
                         isHidden: it.not(it.licensedForFeature('LockTeammateNameDisplay')),
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.SITE.USERS_AND_TEAMS)),
                     },
@@ -2170,6 +2334,7 @@ const AdminDefinition = {
                         help_text: t('admin.viewArchivedChannelsHelpText'),
                         help_text_default: 'When true, allows users to view, share and search for content of channels that have been archived. Users can only view the content in channels of which they were a member before the channel was archived.',
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.SITE.USERS_AND_TEAMS)),
+                        isHidden: it.licensedForFeature('Cloud'),
                     },
                     {
                         type: Constants.SettingsTypes.TYPE_BOOL,
@@ -2196,6 +2361,15 @@ const AdminDefinition = {
                         label_default: 'Enable Custom Statuses: ',
                         help_text: t('admin.team.customUserStatusesDescription'),
                         help_text_default: 'When true, users can set a descriptive status message and status emoji visible to all users.',
+                        isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.SITE.USERS_AND_TEAMS)),
+                    },
+                    {
+                        type: Constants.SettingsTypes.TYPE_BOOL,
+                        key: 'TeamSettings.EnableLastActiveTime',
+                        label: t('admin.team.lastActiveTimeTitle'),
+                        label_default: 'Enable last active time: ',
+                        help_text: t('admin.team.lastActiveTimeDescription'),
+                        help_text_default: 'When enabled, last active time allows users to see when someone was last online.',
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.SITE.USERS_AND_TEAMS)),
                     },
                     {
@@ -2241,6 +2415,7 @@ const AdminDefinition = {
                         help_text: t('admin.environment.notifications.enable.help'),
                         help_text_default: 'Typically set to true in production. When true, Mattermost attempts to send email notifications. When false, email invitations and user account setting change emails are still sent as long as the SMTP server is configured. Developers may set this field to false to skip email setup for faster development.',
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.SITE.NOTIFICATIONS)),
+                        isHidden: it.licensedForFeature('Cloud'),
                     },
                     {
                         type: Constants.SettingsTypes.TYPE_BOOL,
@@ -2253,6 +2428,7 @@ const AdminDefinition = {
                             it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.SITE.NOTIFICATIONS)),
                             it.stateIsTrue('EmailSettings.SendEmailNotifications'),
                         ),
+                        isHidden: it.licensedForFeature('Cloud'),
                     },
                     {
                         type: Constants.SettingsTypes.TYPE_BOOL,
@@ -2267,6 +2443,7 @@ const AdminDefinition = {
                             it.configIsTrue('ClusterSettings', 'Enable'),
                             it.configIsFalse('ServiceSettings', 'SiteURL'),
                         ),
+                        isHidden: it.licensedForFeature('Cloud'),
                     },
                     {
                         type: Constants.SettingsTypes.TYPE_DROPDOWN,
@@ -2494,6 +2671,7 @@ const AdminDefinition = {
                     },
                 ],
             },
+            restrictedIndicator: getRestrictedIndicator(),
         },
         announcement_banner_feature_discovery: {
             url: 'site_config/announcement_banner',
@@ -2517,6 +2695,7 @@ const AdminDefinition = {
                     },
                 ],
             },
+            restrictedIndicator: getRestrictedIndicator(true),
         },
         emoji: {
             url: 'site_config/emoji',
@@ -2579,26 +2758,23 @@ const AdminDefinition = {
                         help_text_default: 'When enabled (default off), users must enable collapsed reply threads in Settings. When disabled, users cannot access Collapsed Reply Threads. Please review our <linkKnownIssues>documentation for known issues</linkKnownIssues> and help provide feedback in our <linkCommunityChannel>Community Channel</linkCommunityChannel>.',
                         help_text_values: {
                             linkKnownIssues: (msg) => (
-                                <a
-                                    href='https://docs.mattermost.com/messaging/organizing-conversations.html'
-                                    referrer='noreferrer'
-                                    target='_blank'
-                                    rel='noreferrer'
+                                <ExternalLink
+                                    location='admin_console'
+                                    href='https://support.mattermost.com/hc/en-us/articles/4413183568276'
                                 >
                                     {msg}
-                                </a>
+                                </ExternalLink>
                             ),
                             linkCommunityChannel: (msg) => (
-                                <a
+                                <ExternalLink
+                                    location='admin_console'
                                     href='https://community-daily.mattermost.com/core/channels/folded-reply-threads'
-                                    referrer='noreferrer'
-                                    target='_blank'
-                                    rel='noreferrer'
                                 >
                                     {msg}
-                                </a>
+                                </ExternalLink>
                             ),
                         },
+                        help_text_markdown: false,
                         options: [
                             {
                                 value: 'disabled',
@@ -2622,7 +2798,27 @@ const AdminDefinition = {
                             },
                         ],
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.EXPERIMENTAL.FEATURES)),
-                        isHidden: it.configIsFalse('FeatureFlags', 'CollapsedThreads'),
+                    },
+                    {
+                        type: Constants.SettingsTypes.TYPE_BOOL,
+                        key: 'ServiceSettings.PostPriority',
+                        label: t('admin.posts.postPriority.title'),
+                        label_default: 'Message Priority',
+                        help_text: t('admin.posts.postPriority.desc'),
+                        help_text_default: 'When enabled, users can configure a visual indicator to communicate messages that are important or urgent. Learn more about message priority in our <link>documentation</link>.',
+                        help_text_values: {
+                            link: (msg) => (
+                                <ExternalLink
+                                    location='admin_console'
+                                    href='https://mattermost.com/pl/message-priority/'
+                                >
+                                    {msg}
+                                </ExternalLink>
+                            ),
+                        },
+                        help_text_markdown: false,
+                        isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.SITE.POSTS)),
+                        isHidden: it.configIsFalse('FeatureFlags', 'PostPriority'),
                     },
                     {
                         type: Constants.SettingsTypes.TYPE_BOOL,
@@ -2653,8 +2849,18 @@ const AdminDefinition = {
                         label: t('admin.customization.enablePermalinkPreviewsTitle'),
                         label_default: 'Enable message link previews:',
                         help_text: t('admin.customization.enablePermalinkPreviewsDesc'),
-                        help_text_default: 'When enabled, links to Mattermost messages will generate a preview for any users that have access to the original message. Please review our [documentation](!https://docs.mattermost.com/messaging/sharing-messages.html) for details.',
-                        help_text_markdown: true,
+                        help_text_default: 'When enabled, links to Mattermost messages will generate a preview for any users that have access to the original message. Please review our <link>documentation</link> for details.',
+                        help_text_values: {
+                            link: (msg) => (
+                                <ExternalLink
+                                    location='admin_console'
+                                    href='https://docs.mattermost.com/messaging/sharing-messages.html'
+                                >
+                                    {msg}
+                                </ExternalLink>
+                            ),
+                        },
+                        help_text_markdown: false,
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.SITE.POSTS)),
                     },
                     {
@@ -2681,8 +2887,18 @@ const AdminDefinition = {
                         label: t('admin.customization.enableInlineLatexTitle'),
                         label_default: 'Enable Inline Latex Rendering:',
                         help_text: t('admin.customization.enableInlineLatexDesc'),
-                        help_text_default: 'Enable rendering of inline Latex code. If false, Latex can only be rendered in a code block using syntax highlighting. Please review our [documentation](!https://docs.mattermost.com/messaging/formatting-text.html) for details about text formatting.',
-                        help_text_markdown: true,
+                        help_text_default: 'Enable rendering of inline Latex code. If false, Latex can only be rendered in a code block using syntax highlighting. Please review our <link>documentation</link> for details about text formatting.',
+                        help_text_values: {
+                            link: (msg) => (
+                                <ExternalLink
+                                    location='admin_console'
+                                    href='https://docs.mattermost.com/messaging/formatting-text.html'
+                                >
+                                    {msg}
+                                </ExternalLink>
+                            ),
+                        },
+                        help_text_markdown: false,
                         isDisabled: it.any(
                             it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.SITE.POSTS)),
                             it.configIsFalse('ServiceSettings', 'EnableLatex'),
@@ -2702,10 +2918,35 @@ const AdminDefinition = {
                         placeholder: t('admin.service.googleExample'),
                         placeholder_default: 'E.g.: "7rAh6iwQCkV4cA1Gsg3fgGOXJAQ43QV"',
                         help_text: t('admin.service.googleDescription'),
-                        help_text_default: 'Set this key to enable the display of titles for embedded YouTube video previews. Without the key, YouTube previews will still be created based on hyperlinks appearing in messages or comments but they will not show the video title. View a [Google Developers Tutorial](!https://www.youtube.com/watch?v=Im69kzhpR3I) for instructions on how to obtain a key and add YouTube Data API v3 as a service to your key.',
-                        help_text_markdown: true,
+                        help_text_default: 'Set this key to enable the display of titles for embedded YouTube video previews. Without the key, YouTube previews will still be created based on hyperlinks appearing in messages or comments but they will not show the video title. View a <link>Google Developers Tutorial</link> for instructions on how to obtain a key and add YouTube Data API v3 as a service to your key.',
+                        help_text_values: {
+                            link: (msg) => (
+                                <ExternalLink
+                                    location='admin_console'
+                                    href='https://www.youtube.com/watch?v=Im69kzhpR3I'
+                                >
+                                    {msg}
+                                </ExternalLink>
+                            ),
+                        },
+                        help_text_markdown: false,
                         isHidden: it.configIsTrue('ExperimentalSettings', 'RestrictSystemAdmin'),
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.SITE.POSTS)),
+                    },
+                    {
+                        type: Constants.SettingsTypes.TYPE_BOOL,
+                        key: 'ServiceSettings.AllowSyncedDrafts',
+                        label: t('admin.customization.allowSyncedDrafts'),
+                        label_default: 'Enable server syncing of message drafts:',
+                        help_text: t('admin.customization.allowSyncedDraftsDesc'),
+                        help_text_default: 'When enabled, users message drafts will sync with the server so they can be accessed from any device. Users may opt out of this behaviour in Account settings.',
+                        help_text_markdown: false,
+                        isHidden: it.any(
+                            it.configIsFalse('FeatureFlags', 'GlobalDrafts'),
+                        ),
+                        isDisabled: it.any(
+                            it.configIsFalse('FeatureFlags', 'GlobalDrafts'),
+                        ),
                     },
                 ],
             },
@@ -2715,7 +2956,6 @@ const AdminDefinition = {
             title: t('admin.sidebar.fileSharingDownloads'),
             title_default: 'File Sharing and Downloads',
             isHidden: it.any(
-                it.configIsTrue('ExperimentalSettings', 'RestrictSystemAdmin'),
                 it.not(it.userHasReadPermissionOnResource(RESOURCE_KEYS.SITE.FILE_SHARING_AND_DOWNLOADS)),
             ),
             schema: {
@@ -2808,16 +3048,15 @@ const AdminDefinition = {
                         help_text_default: 'When enabled, System Admins will receive notices about available server upgrades and relevant system administration features. <link>Learn more about notices</link> in our documentation.',
                         help_text_values: {
                             link: (msg) => (
-                                <a
+                                <ExternalLink
+                                    location='admin_console'
                                     href='https://docs.mattermost.com/manage/in-product-notices.html'
-                                    referrer='noreferrer'
-                                    target='_blank'
-                                    rel='noreferrer'
                                 >
                                     {msg}
-                                </a>
+                                </ExternalLink>
                             ),
                         },
+                        help_text_markdown: false,
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.SITE.NOTICES)),
                     },
                     {
@@ -2829,16 +3068,15 @@ const AdminDefinition = {
                         help_text_default: 'When enabled, all users will receive notices about available client upgrades and relevant end user features to improve user experience. <link>Learn more about notices</link> in our documentation.',
                         help_text_values: {
                             link: (msg) => (
-                                <a
+                                <ExternalLink
+                                    location='admin_console'
                                     href='https://docs.mattermost.com/manage/in-product-notices.html'
-                                    referrer='noreferrer'
-                                    target='_blank'
-                                    rel='noreferrer'
                                 >
                                     {msg}
-                                </a>
+                                </ExternalLink>
                             ),
                         },
+                        help_text_markdown: false,
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.SITE.NOTICES)),
                     },
                 ],
@@ -2846,7 +3084,13 @@ const AdminDefinition = {
         },
     },
     authentication: {
-        icon: 'fa-shield',
+        icon: (
+            <ShieldOutlineIcon
+                size={16}
+                className={'category-icon fa'}
+                color={'currentColor'}
+            />
+        ),
         sectionTitle: t('admin.sidebar.authentication'),
         sectionTitleDefault: 'Authentication',
         isHidden: it.not(it.userHasReadPermissionOnSomeResources(RESOURCE_KEYS.AUTHENTICATION)),
@@ -2878,7 +3122,6 @@ const AdminDefinition = {
                         help_text_default: 'New user accounts are restricted to the above specified email domain (e.g. "mattermost.com") or list of comma-separated domains (e.g. "corp.mattermost.com, mattermost.com"). New teams can only be created by users from the above domain(s). This setting only affects email login for users.',
                         placeholder: t('admin.team.restrictExample'),
                         placeholder_default: 'E.g.: "corp.mattermost.com, mattermost.com"',
-                        isHidden: it.licensed,
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.AUTHENTICATION.SIGNUP)),
                     },
                     {
@@ -2913,6 +3156,7 @@ const AdminDefinition = {
                         help_text: t('admin.team.emailInvitationsDescription'),
                         help_text_default: 'When true users can invite others to the system using email.',
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.AUTHENTICATION.SIGNUP)),
+                        isHidden: it.licensedForFeature('Cloud'),
                     },
                     {
                         type: Constants.SettingsTypes.TYPE_BUTTON,
@@ -2958,6 +3202,7 @@ const AdminDefinition = {
                         help_text: t('admin.email.requireVerificationDescription'),
                         help_text_default: 'Typically set to true in production. When true, Mattermost requires email verification after account creation prior to allowing login. Developers may set this field to false to skip sending verification emails for faster development.',
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.AUTHENTICATION.EMAIL)),
+                        isHidden: it.licensedForFeature('Cloud'),
                     },
                     {
                         type: Constants.SettingsTypes.TYPE_BOOL,
@@ -3018,8 +3263,18 @@ const AdminDefinition = {
                     {
                         type: Constants.SettingsTypes.TYPE_BANNER,
                         label: t('admin.mfa.bannerDesc'),
-                        label_default: '[Multi-factor authentication](!https://docs.mattermost.com/deployment/auth.html) is available for accounts with AD/LDAP or email login. If other login methods are used, MFA should be configured with the authentication provider.',
-                        label_markdown: true,
+                        label_default: '<link>Multi-factor authentication</link> is available for accounts with AD/LDAP or email login. If other login methods are used, MFA should be configured with the authentication provider.',
+                        label_markdown: false,
+                        label_values: {
+                            link: (msg) => (
+                                <ExternalLink
+                                    location='admin_console'
+                                    href='https://docs.mattermost.com/deployment/auth.html'
+                                >
+                                    {msg}
+                                </ExternalLink>
+                            ),
+                        },
                         banner_type: 'info',
                     },
                     {
@@ -3037,8 +3292,18 @@ const AdminDefinition = {
                         label: t('admin.service.enforceMfaTitle'),
                         label_default: 'Enforce Multi-factor Authentication:',
                         help_text: t('admin.service.enforceMfaDesc'),
-                        help_text_markdown: true,
-                        help_text_default: 'When true, [multi-factor authentication](!https://docs.mattermost.com/deployment/auth.html) is required for login. New users will be required to configure MFA on signup. Logged in users without MFA configured are redirected to the MFA setup page until configuration is complete.\n \nIf your system has users with login methods other than AD/LDAP and email, MFA must be enforced with the authentication provider outside of Mattermost.',
+                        help_text_markdown: false,
+                        help_text_default: 'When true, <link>multi-factor authentication</link> is required for login. New users will be required to configure MFA on signup. Logged in users without MFA configured are redirected to the MFA setup page until configuration is complete.\n \nIf your system has users with login methods other than AD/LDAP and email, MFA must be enforced with the authentication provider outside of Mattermost.',
+                        help_text_values: {
+                            link: (msg) => (
+                                <ExternalLink
+                                    location='admin_console'
+                                    href='https://docs.mattermost.com/deployment/auth.html'
+                                >
+                                    {msg}
+                                </ExternalLink>
+                            ),
+                        },
                         isHidden: it.not(it.licensedForFeature('MFA')),
                         isDisabled: it.any(
                             it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.AUTHENTICATION.MFA)),
@@ -3379,8 +3644,18 @@ const AdminDefinition = {
                                 placeholder: t('admin.ldap.idAttrEx'),
                                 placeholder_default: 'E.g.: "objectGUID" or "uid"',
                                 help_text: t('admin.ldap.idAttrDesc'),
-                                help_text_markdown: true,
-                                help_text_default: 'The attribute in the AD/LDAP server used as a unique identifier in Mattermost. It should be an AD/LDAP attribute with a value that does not change such as `uid` for LDAP or `objectGUID` for Active Directory. If a user\'s ID Attribute changes, it will create a new Mattermost account unassociated with their old one.\n \nIf you need to change this field after users have already logged in, use the [mattermost ldap idmigrate](!https://docs.mattermost.com/manage/command-line-tools.html#mattermost-ldap-idmigrate) CLI tool.',
+                                help_text_markdown: false,
+                                help_text_default: 'The attribute in the AD/LDAP server used as a unique identifier in Mattermost. It should be an AD/LDAP attribute with a value that does not change such as `uid` for LDAP or `objectGUID` for Active Directory. If a user\'s ID Attribute changes, it will create a new Mattermost account unassociated with their old one.\n \nIf you need to change this field after users have already logged in, use the <link>mattermost ldap idmigrate</link> CLI tool.',
+                                help_text_values: {
+                                    link: (msg) => (
+                                        <ExternalLink
+                                            location='admin_console'
+                                            href='https://docs.mattermost.com/manage/command-line-tools.html#mattermost-ldap-idmigrate'
+                                        >
+                                            {msg}
+                                        </ExternalLink>
+                                    ),
+                                },
                                 isDisabled: it.any(
                                     it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.AUTHENTICATION.LDAP)),
                                     it.all(
@@ -3397,7 +3672,7 @@ const AdminDefinition = {
                                 placeholder: t('admin.ldap.loginIdAttrEx'),
                                 placeholder_default: 'E.g.: "sAMAccountName"',
                                 help_text: t('admin.ldap.loginAttrDesc'),
-                                help_text_markdown: true,
+                                help_text_markdown: false,
                                 help_text_default: 'The attribute in the AD/LDAP server used to log in to Mattermost. Normally this attribute is the same as the "Username Attribute" field above.\n \nIf your team typically uses domain/username to log in to other services with AD/LDAP, you may enter domain/username in this field to maintain consistency between sites.',
                                 isDisabled: it.any(
                                     it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.AUTHENTICATION.LDAP)),
@@ -3449,7 +3724,10 @@ const AdminDefinition = {
                                 placeholder: t('admin.ldap.firstnameAttrEx'),
                                 placeholder_default: 'E.g.: "givenName"',
                                 help_text: t('admin.ldap.firstnameAttrDesc'),
-                                help_text_default: '(Optional) The attribute in the AD/LDAP server used to populate the first name of users in Mattermost. When set, users cannot edit their first name, since it is synchronized with the LDAP server. When left blank, users can set their first name in **Account Menu > Account Settings > Profile**.',
+                                help_text_default: '(Optional) The attribute in the AD/LDAP server used to populate the first name of users in Mattermost. When set, users cannot edit their first name, since it is synchronized with the LDAP server. When left blank, users can set their first name in <strong>Account Menu > Account Settings > Profile</strong>.',
+                                help_text_values: {
+                                    strong: (msg) => <strong>{msg}</strong>,
+                                },
                                 isDisabled: it.any(
                                     it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.AUTHENTICATION.LDAP)),
                                     it.all(
@@ -3466,7 +3744,10 @@ const AdminDefinition = {
                                 placeholder: t('admin.ldap.lastnameAttrEx'),
                                 placeholder_default: 'E.g.: "sn"',
                                 help_text: t('admin.ldap.lastnameAttrDesc'),
-                                help_text_default: '(Optional) The attribute in the AD/LDAP server used to populate the last name of users in Mattermost. When set, users cannot edit their last name, since it is synchronized with the LDAP server. When left blank, users can set their last name in **Account Menu > Account Settings > Profile**.',
+                                help_text_default: '(Optional) The attribute in the AD/LDAP server used to populate the last name of users in Mattermost. When set, users cannot edit their last name, since it is synchronized with the LDAP server. When left blank, users can set their last name in <strong>Account Menu > Account Settings > Profile</strong>.',
+                                help_text_values: {
+                                    strong: (msg) => <strong>{msg}</strong>,
+                                },
                                 isDisabled: it.any(
                                     it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.AUTHENTICATION.LDAP)),
                                     it.all(
@@ -3483,7 +3764,10 @@ const AdminDefinition = {
                                 placeholder: t('admin.ldap.nicknameAttrEx'),
                                 placeholder_default: 'E.g.: "nickname"',
                                 help_text: t('admin.ldap.nicknameAttrDesc'),
-                                help_text_default: '(Optional) The attribute in the AD/LDAP server used to populate the nickname of users in Mattermost. When set, users cannot edit their nickname, since it is synchronized with the LDAP server. When left blank, users can set their nickname in **Account Menu > Account Settings > Profile**.',
+                                help_text_default: '(Optional) The attribute in the AD/LDAP server used to populate the nickname of users in Mattermost. When set, users cannot edit their nickname, since it is synchronized with the LDAP server. When left blank, users can set their nickname in <strong>Account Menu > Account Settings > Profile</strong>.',
+                                help_text_values: {
+                                    strong: (msg) => <strong>{msg}</strong>,
+                                },
                                 isDisabled: it.any(
                                     it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.AUTHENTICATION.LDAP)),
                                     it.all(
@@ -3500,7 +3784,10 @@ const AdminDefinition = {
                                 placeholder: t('admin.ldap.positionAttrEx'),
                                 placeholder_default: 'E.g.: "title"',
                                 help_text: t('admin.ldap.positionAttrDesc'),
-                                help_text_default: '(Optional) The attribute in the AD/LDAP server used to populate the position field in Mattermost. When set, users cannot edit their position, since it is synchronized with the LDAP server. When left blank, users can set their position in **Account Menu > Account Settings > Profile**.',
+                                help_text_default: '(Optional) The attribute in the AD/LDAP server used to populate the position field in Mattermost. When set, users cannot edit their position, since it is synchronized with the LDAP server. When left blank, users can set their position in <strong>Account Menu > Account Settings > Profile</strong>.',
+                                help_text_values: {
+                                    strong: (msg) => <strong>{msg}</strong>,
+                                },
                                 isDisabled: it.any(
                                     it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.AUTHENTICATION.LDAP)),
                                     it.all(
@@ -3623,8 +3910,18 @@ const AdminDefinition = {
                                 label: t('admin.ldap.ldap_test_button'),
                                 label_default: 'AD/LDAP Test',
                                 help_text: t('admin.ldap.testHelpText'),
-                                help_text_markdown: true,
-                                help_text_default: 'Tests if the Mattermost server can connect to the AD/LDAP server specified. Please review "System Console > Logs" and [documentation](!https://mattermost.com/default-ldap-docs) to troubleshoot errors.',
+                                help_text_default: 'Tests if the Mattermost server can connect to the AD/LDAP server specified. Please review "System Console > Logs" and <link>documentation</link> to troubleshoot errors.',
+                                help_text_values: {
+                                    link: (msg) => (
+                                        <ExternalLink
+                                            location='admin_console'
+                                            href='https://mattermost.com/default-ldap-docs'
+                                        >
+                                            {msg}
+                                        </ExternalLink>
+                                    ),
+                                },
+                                help_text_markdown: false,
                                 error_message: t('admin.ldap.testFailure'),
                                 error_message_default: 'AD/LDAP Test Failure: {error}',
                                 success_message: t('admin.ldap.testSuccess'),
@@ -3649,8 +3946,18 @@ const AdminDefinition = {
                                 label: t('admin.ldap.sync_button'),
                                 label_default: 'AD/LDAP Synchronize Now',
                                 help_text: t('admin.ldap.syncNowHelpText'),
-                                help_text_markdown: true,
-                                help_text_default: 'Initiates an AD/LDAP synchronization immediately. See the table below for status of each synchronization. Please review "System Console > Logs" and [documentation](!https://mattermost.com/default-ldap-docs) to troubleshoot errors.',
+                                help_text_markdown: false,
+                                help_text_default: 'Initiates an AD/LDAP synchronization immediately. See the table below for status of each synchronization. Please review "System Console > Logs" and <link>documentation</link> to troubleshoot errors.',
+                                help_text_values: {
+                                    link: (msg) => (
+                                        <ExternalLink
+                                            location='admin_console'
+                                            href='https://mattermost.com/default-ldap-docs'
+                                        >
+                                            {msg}
+                                        </ExternalLink>
+                                    ),
+                                },
                                 isDisabled: it.any(
                                     it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.AUTHENTICATION.LDAP)),
                                     it.stateIsFalse('LdapSettings.EnableSync'),
@@ -3777,6 +4084,7 @@ const AdminDefinition = {
                     },
                 ],
             },
+            restrictedIndicator: getRestrictedIndicator(),
         },
         ldap_feature_discovery: {
             url: 'authentication/ldap',
@@ -3800,6 +4108,7 @@ const AdminDefinition = {
                     },
                 ],
             },
+            restrictedIndicator: getRestrictedIndicator(true),
         },
         saml: {
             url: 'authentication/saml',
@@ -3820,8 +4129,18 @@ const AdminDefinition = {
                         label: t('admin.saml.enableTitle'),
                         label_default: 'Enable Login With SAML 2.0:',
                         help_text: t('admin.saml.enableDescription'),
-                        help_text_default: 'When true, Mattermost allows login using SAML 2.0. Please see [documentation](!http://docs.mattermost.com/deployment/sso-saml.html) to learn more about configuring SAML for Mattermost.',
-                        help_text_markdown: true,
+                        help_text_default: 'When true, Mattermost allows login using SAML 2.0. Please see <link>documentation</link> to learn more about configuring SAML for Mattermost.',
+                        help_text_markdown: false,
+                        help_text_values: {
+                            link: (msg) => (
+                                <ExternalLink
+                                    location='admin_console'
+                                    href='http://docs.mattermost.com/deployment/sso-saml.html'
+                                >
+                                    {msg}
+                                </ExternalLink>
+                            ),
+                        },
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.AUTHENTICATION.SAML)),
                     },
                     {
@@ -3830,19 +4149,19 @@ const AdminDefinition = {
                         label: t('admin.saml.enableSyncWithLdapTitle'),
                         label_default: 'Enable Synchronizing SAML Accounts With AD/LDAP:',
                         help_text: t('admin.saml.enableSyncWithLdapDescription'),
-                        help_text_default: 'When true, Mattermost periodically synchronizes SAML user attributes, including user deactivation and removal, from AD/LDAP. Enable and configure synchronization settings at **Authentication > AD/LDAP**. When false, user attributes are updated from SAML during user login. See <link>documentation</link> to learn more.',
+                        help_text_default: 'When true, Mattermost periodically synchronizes SAML user attributes, including user deactivation and removal, from AD/LDAP. Enable and configure synchronization settings at <strong>Authentication > AD/LDAP</strong>. When false, user attributes are updated from SAML during user login. See <link>documentation</link> to learn more.',
                         help_text_values: {
                             link: (msg) => (
-                                <a
+                                <ExternalLink
+                                    location='admin_console'
                                     href='https://docs.mattermost.com/onboard/ad-ldap.html'
-                                    referrer='noreferrer'
-                                    target='_blank'
-                                    rel='noreferrer'
                                 >
                                     {msg}
-                                </a>
+                                </ExternalLink>
                             ),
+                            strong: (msg) => <strong>{msg}</strong>,
                         },
+                        help_text_markdown: false,
                         isDisabled: it.any(
                             it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.AUTHENTICATION.SAML)),
                             it.stateIsFalse('SamlSettings.Enable'),
@@ -3868,8 +4187,19 @@ const AdminDefinition = {
                         label: t('admin.saml.enableSyncWithLdapIncludeAuthTitle'),
                         label_default: 'Override SAML bind data with AD/LDAP information:',
                         help_text: t('admin.saml.enableSyncWithLdapIncludeAuthDescription'),
-                        help_text_default: 'When true, Mattermost will override the SAML ID attribute with the AD/LDAP ID attribute if configured or override the SAML Email attribute with the AD/LDAP Email attribute if SAML ID attribute is not present.  This will allow you automatically migrate users from Email binding to ID binding to prevent creation of new users when an email address changes for a user. Moving from true to false, will remove the override from happening.\n \n**Note:** SAML IDs must match the LDAP IDs to prevent disabling of user accounts.  Please review [documentation](!https://docs.mattermost.com/deployment/sso-saml-ldapsync.html) for more information.',
-                        help_text_markdown: true,
+                        help_text_default: 'When true, Mattermost will override the SAML ID attribute with the AD/LDAP ID attribute if configured or override the SAML Email attribute with the AD/LDAP Email attribute if SAML ID attribute is not present.  This will allow you automatically migrate users from Email binding to ID binding to prevent creation of new users when an email address changes for a user. Moving from true to false, will remove the override from happening.\n \n<strong>Note:</strong> SAML IDs must match the LDAP IDs to prevent disabling of user accounts.  Please review <link>documentation</link> for more information.',
+                        help_text_values: {
+                            link: (msg) => (
+                                <ExternalLink
+                                    location='admin_console'
+                                    href='https://docs.mattermost.com/deployment/sso-saml-ldapsync.html'
+                                >
+                                    {msg}
+                                </ExternalLink>
+                            ),
+                            strong: (msg) => <strong>{msg}</strong>,
+                        },
+                        help_text_markdown: false,
                         isDisabled: it.any(
                             it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.AUTHENTICATION.SAML)),
                             it.stateIsFalse('SamlSettings.Enable'),
@@ -4317,6 +4647,7 @@ const AdminDefinition = {
                     },
                 ],
             },
+            restrictedIndicator: getRestrictedIndicator(),
         },
         saml_feature_discovery: {
             url: 'authentication/saml',
@@ -4340,6 +4671,7 @@ const AdminDefinition = {
                     },
                 ],
             },
+            restrictedIndicator: getRestrictedIndicator(true),
         },
         gitlab: {
             url: 'authentication/gitlab',
@@ -4462,15 +4794,6 @@ const AdminDefinition = {
             url: 'authentication/oauth',
             title: t('admin.sidebar.oauth'),
             title_default: 'OAuth 2.0',
-            tag: {
-                value: (
-                    <FormattedMessage
-                        id='admin.sidebar.oauth.tag'
-                        defaultMessage='deprecated'
-                    />
-                ),
-                shouldDisplay: (license) => license.IsLicensed && license.OpenId === 'true',
-            },
             isHidden: it.any(
                 it.any(
                     it.not(it.licensed),
@@ -4533,7 +4856,7 @@ const AdminDefinition = {
                         component: OpenIdConvert,
                         key: 'OpenIdConvert',
                         isHidden: it.any(
-                            it.not(it.licensedForFeature('OpenId')),
+                            it.all(it.not(it.licensedForFeature('OpenId')), it.not(it.cloudLicensed)),
                             it.not(usesLegacyOauth),
                         ),
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.AUTHENTICATION.OPENID)),
@@ -4561,19 +4884,73 @@ const AdminDefinition = {
                                 value: Constants.GOOGLE_SERVICE,
                                 display_name: t('admin.oauth.google'),
                                 display_name_default: 'Google Apps',
-                                isHidden: it.not(it.licensedForFeature('GoogleOAuth')),
+                                isHidden: it.all(it.not(it.licensedForFeature('GoogleOAuth')), it.not(it.cloudLicensed)),
                                 help_text: t('admin.google.EnableMarkdownDesc'),
-                                help_text_default: '1. [Log in](!https://accounts.google.com/login) to your Google account.\n2. Go to [https://console.developers.google.com](!https://console.developers.google.com), click **Credentials** in the left hand sidebar and enter "Mattermost - your-company-name" as the **Project Name**, then click **Create**.\n3. Click the **OAuth consent screen** header and enter "Mattermost" as the **Product name shown to users**, then click **Save**.\n4. Under the **Credentials** header, click **Create credentials**, choose **OAuth client ID** and select **Web Application**.\n5. Under **Restrictions** and **Authorized redirect URIs** enter **your-mattermost-url/signup/google/complete** (example: http://localhost:8065/signup/google/complete). Click **Create**.\n6. Paste the **Client ID** and **Client Secret** to the fields below, then click **Save**.\n7. Go to the [Google People API](!https://console.developers.google.com/apis/library/people.googleapis.com) and click *Enable*.',
-                                help_text_markdown: true,
+                                help_text_default: '1. <linkLogin>Log in</linkLogin> to your Google account.\n2. Go to <linkConsole>https://console.developers.google.com</linkConsole>, click <strong>Credentials</strong> in the left hand sidebar and enter "Mattermost - your-company-name" as the <strong>Project Name</strong>, then click <strong>Create</strong>.\n3. Click the <strong>OAuth consent screen</strong> header and enter "Mattermost" as the <strong>Product name shown to users</strong>, then click <strong>Save</strong>.\n4. Under the <strong>Credentials</strong> header, click <strong>Create credentials</strong>, choose <strong>OAuth client ID</strong> and select <strong>Web Application</strong>.\n5. Under <strong>Restrictions</strong> and <strong>Authorized redirect URIs</strong> enter <strong>your-mattermost-url/signup/google/complete</strong> (example: http://localhost:8065/signup/google/complete). Click <strong>Create</strong>.\n6. Paste the <strong>Client ID</strong> and <strong>Client Secret</strong> to the fields below, then click <strong>Save</strong>.\n7. Go to the <linkAPI>Google People API</linkAPI> and click <strong>Enable</strong>.',
+                                help_text_markdown: false,
+                                help_text_values: {
+                                    linkLogin: (msg) => (
+                                        <ExternalLink
+                                            location='admin_console'
+                                            href='https://accounts.google.com/login'
+                                        >
+                                            {msg}
+                                        </ExternalLink>
+                                    ),
+                                    linkConsole: (msg) => (
+                                        <ExternalLink
+                                            location='admin_console'
+                                            href='https://console.developers.google.com'
+                                        >
+                                            {msg}
+                                        </ExternalLink>
+                                    ),
+                                    linkAPI: (msg) => (
+                                        <ExternalLink
+                                            location='admin_console'
+                                            href='https://console.developers.google.com/apis/library/people.googleapis.com'
+                                        >
+                                            {msg}
+                                        </ExternalLink>
+                                    ),
+                                    strong: (msg) => <strong>{msg}</strong>,
+                                },
                             },
                             {
                                 value: Constants.OFFICE365_SERVICE,
                                 display_name: t('admin.oauth.office365'),
                                 display_name_default: 'Office 365',
-                                isHidden: it.not(it.licensedForFeature('Office365OAuth')),
+                                isHidden: it.all(it.not(it.licensedForFeature('Office365OAuth')), it.not(it.cloudLicensed)),
                                 help_text: t('admin.office365.EnableMarkdownDesc'),
-                                help_text_default: '1. [Log in](!https://login.microsoftonline.com/) to your Microsoft or Office 365 account. Make sure it`s the account on the same [tenant](!https://msdn.microsoft.com/en-us/library/azure/jj573650.aspx#Anchor_0) that you would like users to log in with.\n2. Go to [https://apps.dev.microsoft.com](!https://apps.dev.microsoft.com), click **Go to app list** > **Add an app** and use "Mattermost - your-company-name" as the **Application Name**.\n3. Under **Application Secrets**, click **Generate New Password** and paste it to the **Application Secret Password** field below.\n4. Under **Platforms**, click **Add Platform**, choose **Web** and enter **your-mattermost-url/signup/office365/complete** (example: http://localhost:8065/signup/office365/complete) under **Redirect URIs**. Also uncheck **Allow Implicit Flow**.\n5. Finally, click **Save** and then paste the **Application ID** below.',
-                                help_text_markdown: true,
+                                help_text_default: '1. <linkLogin>Log in</linkLogin> to your Microsoft or Office 365 account. Make sure it`s the account on the same <linkTenant>tenant</linkTenant> that you would like users to log in with.\n2. Go to <linkApps>https://apps.dev.microsoft.com</linkApps>, click <strong>Go to app list</strong> > <strong>Add an app</strong> and use "Mattermost - your-company-name" as the <strong>Application Name</strong>.\n3. Under <strong>Application Secrets</strong>, click <strong>Generate New Password</strong> and paste it to the <strong>Application Secret Password<strong> field below.\n4. Under <strong>Platforms</strong>, click <strong>Add Platform</strong>, choose <strong>Web</strong> and enter <strong>your-mattermost-url/signup/office365/complete</strong> (example: http://localhost:8065/signup/office365/complete) under <strong>Redirect URIs</strong>. Also uncheck <strong>Allow Implicit Flow</strong>.\n5. Finally, click <strong>Save</strong> and then paste the <strong>Application ID</strong> below.',
+                                help_text_markdown: false,
+                                help_text_values: {
+                                    linkLogin: (msg) => (
+                                        <ExternalLink
+                                            location='admin_console'
+                                            href='https://login.microsoftonline.com/'
+                                        >
+                                            {msg}
+                                        </ExternalLink>
+                                    ),
+                                    linkTenant: (msg) => (
+                                        <ExternalLink
+                                            location='admin_console'
+                                            href='https://msdn.microsoft.com/en-us/library/azure/jj573650.aspx#Anchor_0'
+                                        >
+                                            {msg}
+                                        </ExternalLink>
+                                    ),
+                                    linkApps: (msg) => (
+                                        <ExternalLink
+                                            location='admin_console'
+                                            href='https://apps.dev.microsoft.com'
+                                        >
+                                            {msg}
+                                        </ExternalLink>
+                                    ),
+                                    strong: (msg) => <strong>{msg}</strong>,
+                                },
                             },
                         ],
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.AUTHENTICATION.OPENID)),
@@ -4788,7 +5165,7 @@ const AdminDefinition = {
             title: t('admin.sidebar.openid'),
             title_default: 'OpenID Connect',
             isHidden: it.any(
-                it.not(it.licensedForFeature('OpenId')),
+                it.all(it.not(it.licensedForFeature('OpenId')), it.not(it.cloudLicensed)),
                 it.not(it.userHasReadPermissionOnResource(RESOURCE_KEYS.AUTHENTICATION.OPENID)),
             ),
             schema: {
@@ -4866,6 +5243,7 @@ const AdminDefinition = {
                         key: 'openidType',
                         label: t('admin.openid.select'),
                         label_default: 'Select service provider:',
+                        isHelpHidden: it.all(it.stateEquals('openidType', Constants.OPENID_SERVICE), it.licensedForCloudStarter),
                         options: [
                             {
                                 value: 'off',
@@ -4878,23 +5256,77 @@ const AdminDefinition = {
                                 display_name_default: 'GitLab',
                                 help_text: t('admin.gitlab.EnableMarkdownDesc'),
                                 help_text_default: '1. Log in to your GitLab account and go to Profile Settings -> Applications.\n2. Enter Redirect URIs "<your-mattermost-url>/login/gitlab/complete" (example: http://localhost:8065/login/gitlab/complete) and "<your-mattermost-url>/signup/gitlab/complete".\n3. Then use "Application Secret Key" and "Application ID" fields from GitLab to complete the options below.\n4. Complete the Endpoint URLs below.',
-                                help_text_markdown: true,
+                                help_text_markdown: false,
                             },
                             {
                                 value: Constants.GOOGLE_SERVICE,
                                 display_name: t('admin.openid.google'),
                                 display_name_default: 'Google Apps',
                                 help_text: t('admin.google.EnableMarkdownDesc'),
-                                help_text_default: '1. [Log in](!https://accounts.google.com/login) to your Google account.\n2. Go to [https://console.developers.google.com](!https://console.developers.google.com), click **Credentials** in the left hand side.\n 3. Under the **Credentials** header, click **Create credentials**, choose **OAuth client ID** and select **Web Application**.\n 4. Enter "Mattermost - your-company-name" as the **Name**.\n 5. Under **Authorized redirect URIs** enter **your-mattermost-url/signup/google/complete** (example: http://localhost:8065/signup/google/complete). Click **Create**.\n 6. Paste the **Client ID** and **Client Secret** to the fields below, then click **Save**.\n 7. Go to the [Google People API](!https://console.developers.google.com/apis/library/people.googleapis.com) and click *Enable*.',
-                                help_text_markdown: true,
+                                help_text_default: '1. <linkLogin>Log in</linkLogin> to your Google account.\n2. Go to <linkConsole>https://console.developers.google.com]</linkConsole>, click <strong>Credentials</strong> in the left hand side.\n 3. Under the <strong>Credentials</strong> header, click <strong>Create credentials</strong>, choose <strong>OAuth client ID</strong> and select <strong>Web Application</strong>.\n 4. Enter "Mattermost - your-company-name" as the <strong>Name</strong>.\n 5. Under <strong>Authorized redirect URIs</strong> enter <strong>your-mattermost-url/signup/google/complete</strong> (example: http://localhost:8065/signup/google/complete). Click <strong>Create</strong>.\n 6. Paste the <strong>Client ID</strong> and <strong>Client Secret</strong> to the fields below, then click <strong>Save</strong>.\n 7. Go to the <linkAPI>Google People API</linkAPI> and click <strong>Enable</strong>.',
+                                help_text_markdown: false,
+                                help_text_values: {
+                                    linkLogin: (msg) => (
+                                        <ExternalLink
+                                            location='admin_console'
+                                            href='https://accounts.google.com/login'
+                                        >
+                                            {msg}
+                                        </ExternalLink>
+                                    ),
+                                    linkConsole: (msg) => (
+                                        <ExternalLink
+                                            location='admin_console'
+                                            href='https://console.developers.google.com'
+                                        >
+                                            {msg}
+                                        </ExternalLink>
+                                    ),
+                                    linkAPI: (msg) => (
+                                        <ExternalLink
+                                            location='admin_console'
+                                            href='https://console.developers.google.com/apis/library/people.googleapis.com'
+                                        >
+                                            {msg}
+                                        </ExternalLink>
+                                    ),
+                                    strong: (msg) => <strong>{msg}</strong>,
+                                },
                             },
                             {
                                 value: Constants.OFFICE365_SERVICE,
                                 display_name: t('admin.openid.office365'),
                                 display_name_default: 'Office 365',
                                 help_text: t('admin.office365.EnableMarkdownDesc'),
-                                help_text_default: '1. [Log in](!https://login.microsoftonline.com/) to your Microsoft or Office 365 account. Make sure it`s the account on the same [tenant](!https://msdn.microsoft.com/en-us/library/azure/jj573650.aspx#Anchor_0) that you would like users to log in with.\n2. Go to [https://apps.dev.microsoft.com](!https://apps.dev.microsoft.com), click **Go to Azure Portal** > click **New Registration**.\n3. Use "Mattermost - your-company-name" as the **Application Name**, click **Registration**, paste **Client ID** and **Tenant ID** below.\n4. Click **Authentication**, under **Platforms**, click **Add Platform**, choose **Web** and enter **your-mattermost-url/signup/office365/complete** (example: http://localhost:8065/signup/office365/complete) under **Redirect URIs**. Also uncheck **Allow Implicit Flow**.\n5. Click **Certificates & secrets**, Generate **New client secret** and paste secret value in **Client Secret** field below.',
-                                help_text_markdown: true,
+                                help_text_default: '1. <linkLogin>Log in</linkLogin> to your Microsoft or Office 365 account. Make sure it`s the account on the same <linkTenant>tenant</linkTenant> that you would like users to log in with.\n2. Go to <linkApps>https://apps.dev.microsoft.com</linkApps>, click <strong>Go to Azure Portal</strong> > click <strong>New Registration</strong>.\n3. Use "Mattermost - your-company-name" as the <strong>Application Name</strong>, click <strong>Registration</strong>, paste <strong>Client ID</strong> and <strong>Tenant ID</strong> below.\n4. Click <strong>Authentication</strong>, under <strong>Platforms</strong>, click <strong>Add Platform</strong>, choose <strong>Web</strong> and enter <strong>your-mattermost-url/signup/office365/complete</strong> (example: http://localhost:8065/signup/office365/complete) under <strong>Redirect URIs</strong>. Also uncheck <strong>Allow Implicit Flow</strong>.\n5. Click <strong>Certificates & secrets</strong>, Generate <strong>New client secret</strong> and paste secret value in <strong>Client Secret</strong> field below.',
+                                help_text_markdown: false,
+                                help_text_values: {
+                                    linkLogin: (msg) => (
+                                        <ExternalLink
+                                            location='admin_console'
+                                            href='https://login.microsoftonline.com/'
+                                        >
+                                            {msg}
+                                        </ExternalLink>
+                                    ),
+                                    linkTenant: (msg) => (
+                                        <ExternalLink
+                                            location='admin_console'
+                                            href='https://msdn.microsoft.com/en-us/library/azure/jj573650.aspx#Anchor_0'
+                                        >
+                                            {msg}
+                                        </ExternalLink>
+                                    ),
+                                    linkApps: (msg) => (
+                                        <ExternalLink
+                                            location='admin_console'
+                                            href='https://apps.dev.microsoft.com'
+                                        >
+                                            {msg}
+                                        </ExternalLink>
+                                    ),
+                                    strong: (msg) => <strong>{msg}</strong>,
+                                },
                             },
                             {
                                 value: Constants.OPENID_SERVICE,
@@ -4902,7 +5334,7 @@ const AdminDefinition = {
                                 display_name_default: 'OpenID Connect (Other)',
                                 help_text: t('admin.openid.EnableMarkdownDesc'),
                                 help_text_default: 'Follow provider directions for creating an OpenID Application. Most OpenID Connect providers require authorization of all redirect URIs. In the appropriate field, enter your-mattermost-url/signup/openid/complete (example: http://domain.com/signup/openid/complete)',
-                                help_text_markdown: true,
+                                help_text_markdown: false,
                             },
                         ],
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.AUTHENTICATION.OPENID)),
@@ -5059,7 +5491,7 @@ const AdminDefinition = {
                         placeholder_default: 'Custom Button Name',
                         help_text: t('admin.openid.buttonTextDesc'),
                         help_text_default: 'The text that will show on the login button.',
-                        isHidden: it.not(it.stateEquals('openidType', Constants.OPENID_SERVICE)),
+                        isHidden: it.any(it.not(it.stateEquals('openidType', Constants.OPENID_SERVICE)), it.licensedForCloudStarter),
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.AUTHENTICATION.OPENID)),
                     },
                     {
@@ -5070,7 +5502,7 @@ const AdminDefinition = {
                         help_text: t('admin.openid.buttonColorDesc'),
                         help_text_default: 'Specify the color of the OpenID login button for white labeling purposes. Use a hex code with a #-sign before the code.',
                         help_text_markdown: false,
-                        isHidden: it.not(it.stateEquals('openidType', Constants.OPENID_SERVICE)),
+                        isHidden: it.any(it.not(it.stateEquals('openidType', Constants.OPENID_SERVICE)), it.licensedForCloudStarter),
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.AUTHENTICATION.OPENID)),
                     },
                     {
@@ -5083,7 +5515,7 @@ const AdminDefinition = {
                         help_text: t('admin.openid.discoveryEndpointDesc'),
                         help_text_default: 'Enter the URL of the discovery document of the OpenID Connect provider you want to connect with.',
                         help_text_markdown: false,
-                        isHidden: it.not(it.stateEquals('openidType', Constants.OPENID_SERVICE)),
+                        isHidden: it.any(it.not(it.stateEquals('openidType', Constants.OPENID_SERVICE)), it.licensedForCloudStarter),
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.AUTHENTICATION.OPENID)),
                     },
                     {
@@ -5095,7 +5527,7 @@ const AdminDefinition = {
                         help_text_default: 'Obtaining the Client ID differs across providers. Please check you provider\'s documentation',
                         placeholder: t('admin.openid.clientIdExample'),
                         placeholder_default: 'E.g.: "adf3sfa2-ag3f-sn4n-ids0-sh1hdax192qq"',
-                        isHidden: it.not(it.stateEquals('openidType', Constants.OPENID_SERVICE)),
+                        isHidden: it.any(it.not(it.stateEquals('openidType', Constants.OPENID_SERVICE)), it.licensedForCloudStarter),
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.AUTHENTICATION.OPENID)),
                     },
                     {
@@ -5107,11 +5539,19 @@ const AdminDefinition = {
                         help_text_default: 'Obtaining the Client Secret differs across providers. Please check you provider\'s documentation',
                         placeholder: t('admin.openid.clientSecretExample'),
                         placeholder_default: 'E.g.: "H8sz0Az-dDs2p15-7QzD231"',
-                        isHidden: it.not(it.stateEquals('openidType', Constants.OPENID_SERVICE)),
+                        isHidden: it.any(it.not(it.stateEquals('openidType', Constants.OPENID_SERVICE)), it.licensedForCloudStarter),
+                        isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.AUTHENTICATION.OPENID)),
+                    },
+                    {
+                        type: Constants.SettingsTypes.TYPE_CUSTOM,
+                        key: 'OpenIDCustomFeatureDiscovery',
+                        component: OpenIDCustomFeatureDiscovery,
+                        isHidden: it.not(it.all(it.stateEquals('openidType', Constants.OPENID_SERVICE), it.licensedForCloudStarter)),
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.AUTHENTICATION.OPENID)),
                     },
                 ],
             },
+            restrictedIndicator: getRestrictedIndicator(),
         },
         openid_feature_discovery: {
             url: 'authentication/openid',
@@ -5119,7 +5559,7 @@ const AdminDefinition = {
             title: t('admin.sidebar.openid'),
             title_default: 'OpenID Connect',
             isHidden: it.any(
-                it.licensedForFeature('OpenId'),
+                it.any(it.licensedForFeature('OpenId'), it.cloudLicensed),
                 it.not(it.enterpriseReady),
             ),
             schema: {
@@ -5135,6 +5575,7 @@ const AdminDefinition = {
                     },
                 ],
             },
+            restrictedIndicator: getRestrictedIndicator(true),
         },
         guest_access: {
             url: 'authentication/guest_access',
@@ -5198,8 +5639,18 @@ const AdminDefinition = {
                         label: t('admin.guest_access.mfaTitle'),
                         label_default: 'Enforce Multi-factor Authentication: ',
                         help_text: t('admin.guest_access.mfaDescription'),
-                        help_text_default: 'When true, [multi-factor authentication](!https://docs.mattermost.com/deployment/auth.html) for guests is required for login. New guest users will be required to configure MFA on signup. Logged in guest users without MFA configured are redirected to the MFA setup page until configuration is complete.\n \nIf your system has guest users with login methods other than AD/LDAP and email, MFA must be enforced with the authentication provider outside of Mattermost.',
-                        help_text_markdown: true,
+                        help_text_default: 'When true, <link>multi-factor authentication</link> for guests is required for login. New guest users will be required to configure MFA on signup. Logged in guest users without MFA configured are redirected to the MFA setup page until configuration is complete.\n \nIf your system has guest users with login methods other than AD/LDAP and email, MFA must be enforced with the authentication provider outside of Mattermost.',
+                        help_text_values: {
+                            link: (msg) => (
+                                <ExternalLink
+                                    location='admin_console'
+                                    href='https://docs.mattermost.com/deployment/auth.html'
+                                >
+                                    {msg}
+                                </ExternalLink>
+                            ),
+                        },
+                        help_text_markdown: false,
                         isHidden: it.any(
                             it.configIsFalse('ServiceSettings', 'EnableMultifactorAuthentication'),
                             it.configIsFalse('ServiceSettings', 'EnforceMultifactorAuthentication'),
@@ -5208,6 +5659,7 @@ const AdminDefinition = {
                     },
                 ],
             },
+            restrictedIndicator: getRestrictedIndicator(),
         },
         guest_access_feature_discovery: {
             isDiscovery: true,
@@ -5231,10 +5683,17 @@ const AdminDefinition = {
                     },
                 ],
             },
+            restrictedIndicator: getRestrictedIndicator(true),
         },
     },
     plugins: {
-        icon: 'fa-plug',
+        icon: (
+            <PowerPlugOutlineIcon
+                size={16}
+                className={'category-icon fa'}
+                color={'currentColor'}
+            />
+        ),
         sectionTitle: t('admin.sidebar.plugins'),
         sectionTitleDefault: 'Plugins',
         id: 'plugins',
@@ -5276,8 +5735,51 @@ const AdminDefinition = {
             },
         },
     },
+    products: {
+        icon: (
+            <ProductsIcon
+                size={16}
+                className={'category-icon fa'}
+                color={'currentColor'}
+            />
+        ),
+        sectionTitle: t('admin.sidebar.products'),
+        sectionTitleDefault: 'Products',
+        isHidden: it.any(
+            it.configIsFalse('FeatureFlags', 'BoardsProduct'),
+            it.not(it.userHasReadPermissionOnSomeResources(RESOURCE_KEYS.PRODUCTS)),
+        ),
+        boards: {
+            url: 'products/boards',
+            title: t('admin.sidebar.boards'),
+            title_default: 'Boards',
+            isHidden: it.not(it.userHasReadPermissionOnResource(RESOURCE_KEYS.PRODUCTS.BOARDS)),
+            schema: {
+                id: 'BoardsSettings',
+                name: t('admin.site.boards'),
+                name_default: 'Boards',
+                settings: [
+                    {
+                        type: Constants.SettingsTypes.TYPE_BOOL,
+                        key: 'ProductSettings.EnablePublicSharedBoards',
+                        label: t('admin.customization.enablePublicSharedBoardsTitle'),
+                        label_default: 'Enable Public Shared Boards:',
+                        help_text: t('admin.customization.enablePublicSharedBoardsDesc'),
+                        help_text_default: 'This allows board editors to share boards that can be accessed by anyone with the link.',
+                        isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.PRODUCTS.BOARDS)),
+                    },
+                ],
+            },
+        },
+    },
     integrations: {
-        icon: 'fa-sitemap',
+        icon: (
+            <SitemapIcon
+                size={16}
+                className={'category-icon fa'}
+                color={'currentColor'}
+            />
+        ),
         sectionTitle: t('admin.sidebar.integrations'),
         sectionTitleDefault: 'Integrations',
         id: 'integrations',
@@ -5303,16 +5805,15 @@ const AdminDefinition = {
                         help_text_default: 'When true, incoming webhooks will be allowed. To help combat phishing attacks, all posts from webhooks will be labelled by a BOT tag. See <link>documentation</link> to learn more.',
                         help_text_values: {
                             link: (msg) => (
-                                <a
+                                <ExternalLink
                                     href='https://developers.mattermost.com/integrate/admin-guide/admin-webhooks-incoming/'
-                                    referrer='noreferrer'
-                                    target='_blank'
-                                    rel='noreferrer'
+                                    location='admin_console'
                                 >
                                     {msg}
-                                </a>
+                                </ExternalLink>
                             ),
                         },
+                        help_text_markdown: false,
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.INTEGRATIONS.INTEGRATION_MANAGEMENT)),
                     },
                     {
@@ -5324,16 +5825,15 @@ const AdminDefinition = {
                         help_text_default: 'When true, outgoing webhooks will be allowed. See <link>documentation</link> to learn more.',
                         help_text_values: {
                             link: (msg) => (
-                                <a
+                                <ExternalLink
+                                    location='admin_console'
                                     href='https://developers.mattermost.com/integrate/admin-guide/admin-webhooks-outgoing/'
-                                    referrer='noreferrer'
-                                    target='_blank'
-                                    rel='noreferrer'
                                 >
                                     {msg}
-                                </a>
+                                </ExternalLink>
                             ),
                         },
+                        help_text_markdown: false,
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.INTEGRATIONS.INTEGRATION_MANAGEMENT)),
                     },
                     {
@@ -5345,16 +5845,15 @@ const AdminDefinition = {
                         help_text_default: 'When true, custom slash commands will be allowed. See <link>documentation</link> to learn more.',
                         help_text_values: {
                             link: (msg) => (
-                                <a
+                                <ExternalLink
+                                    location='admin_console'
                                     href='https://developers.mattermost.com/integrate/admin-guide/admin-slash-commands/'
-                                    referrer='noreferrer'
-                                    target='_blank'
-                                    rel='noreferrer'
                                 >
                                     {msg}
-                                </a>
+                                </ExternalLink>
                             ),
                         },
+                        help_text_markdown: false,
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.INTEGRATIONS.INTEGRATION_MANAGEMENT)),
                     },
                     {
@@ -5366,17 +5865,17 @@ const AdminDefinition = {
                         help_text_default: 'When true, Mattermost can act as an OAuth 2.0 service provider allowing Mattermost to authorize API requests from external applications. See <link>documentation</link> to learn more.',
                         help_text_values: {
                             link: (msg) => (
-                                <a
+                                <ExternalLink
+                                    location='admin_console'
                                     href='https://developers.mattermost.com/integrate/admin-guide/admin-oauth2/'
-                                    referrer='noreferrer'
-                                    target='_blank'
-                                    rel='noreferrer'
                                 >
                                     {msg}
-                                </a>
+                                </ExternalLink>
                             ),
                         },
+                        help_text_markdown: false,
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.INTEGRATIONS.INTEGRATION_MANAGEMENT)),
+                        isHidden: it.licensedForFeature('Cloud'),
                     },
                     {
                         type: Constants.SettingsTypes.TYPE_BOOL,
@@ -5402,19 +5901,19 @@ const AdminDefinition = {
                         label: t('admin.service.userAccessTokensTitle'),
                         label_default: 'Enable User Access Tokens: ',
                         help_text: t('admin.service.userAccessTokensDescription'),
-                        help_text_default: 'When true, users can create <link>user access tokens</link> for integrations in **Account Menu > Account Settings > Security**. They can be used to authenticate against the API and give full access to the account.\n\n To manage who can create personal access tokens or to search users by token ID, go to the **User Management > Users** page.',
+                        help_text_default: 'When true, users can create <link>user access tokens</link> for integrations in <strong>Account Menu > Account Settings > Security</strong>. They can be used to authenticate against the API and give full access to the account.\n\n To manage who can create personal access tokens or to search users by token ID, go to the <strong>User Management > Users</strong> page.',
                         help_text_values: {
                             link: (msg) => (
-                                <a
+                                <ExternalLink
+                                    location='admin_console'
                                     href='https://developers.mattermost.com/integrate/admin-guide/admin-personal-access-token/'
-                                    referrer='noreferrer'
-                                    target='_blank'
-                                    rel='noreferrer'
                                 >
                                     {msg}
-                                </a>
+                                </ExternalLink>
                             ),
+                            strong: (msg) => <strong>{msg}</strong>,
                         },
+                        help_text_markdown: false,
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.INTEGRATIONS.INTEGRATION_MANAGEMENT)),
                     },
                 ],
@@ -5438,9 +5937,27 @@ const AdminDefinition = {
                         label: t('admin.service.enableBotTitle'),
                         label_default: 'Enable Bot Account Creation: ',
                         help_text: t('admin.service.enableBotAccountCreation'),
-                        help_text_default: 'When true, System Admins can create bot accounts for integrations in [Integrations > Bot Accounts]({siteURL}/_redirect/integrations/bots). Bot accounts are similar to user accounts except they cannot be used to log in. See [documentation](https://mattermost.com/pl/default-bot-accounts) to learn more.',
-                        help_text_markdown: true,
-                        help_text_values: {siteURL: getSiteURL()},
+                        help_text_default: 'When true, System Admins can create bot accounts for integrations in <linkBots>Integrations > Bot Accounts</linkBots>. Bot accounts are similar to user accounts except they cannot be used to log in. See <linkDocumentation>documentation</linkDocumentation> to learn more.',
+                        help_text_markdown: false,
+                        help_text_values: {
+                            siteURL: getSiteURL(),
+                            linkDocumentation: (msg) => (
+                                <ExternalLink
+                                    location='admin_console'
+                                    href='https://mattermost.com/pl/default-bot-accounts'
+                                >
+                                    {msg}
+                                </ExternalLink>
+                            ),
+                            linkBots: (msg) => (
+                                <ExternalLink
+                                    location='admin_console'
+                                    href={`${getSiteURL()}/_redirect/integrations/bots`}
+                                >
+                                    {msg}
+                                </ExternalLink>
+                            ),
+                        },
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.INTEGRATIONS.BOT_ACCOUNTS)),
                     },
                     {
@@ -5484,8 +6001,18 @@ const AdminDefinition = {
                         label: t('admin.customization.gfycatApiKey'),
                         label_default: 'Gfycat API Key:',
                         help_text: t('admin.customization.gfycatApiKeyDescription'),
-                        help_text_default: 'Request an API key at [https://developers.gfycat.com/signup/#](!https://developers.gfycat.com/signup/#). Enter the client ID you receive via email to this field. When blank, uses the default API key provided by Gfycat.',
-                        help_text_markdown: true,
+                        help_text_default: 'Request an API key at <link>https://developers.gfycat.com/signup/#</link>. Enter the client ID you receive via email to this field. When blank, uses the default API key provided by Gfycat.',
+                        help_text_markdown: false,
+                        help_text_values: {
+                            link: (msg) => (
+                                <ExternalLink
+                                    location='admin_console'
+                                    href='https://developers.gfycat.com/signup/#'
+                                >
+                                    {msg}
+                                </ExternalLink>
+                            ),
+                        },
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.INTEGRATIONS.GIF)),
                     },
                     {
@@ -5558,7 +6085,13 @@ const AdminDefinition = {
         },
     },
     compliance: {
-        icon: 'fa-list',
+        icon: (
+            <FormatListBulletedIcon
+                size={16}
+                className={'category-icon fa'}
+                color={'currentColor'}
+            />
+        ),
         sectionTitle: t('admin.sidebar.compliance'),
         sectionTitleDefault: 'Compliance',
         isHidden: it.not(it.userHasReadPermissionOnSomeResources(RESOURCE_KEYS.COMPLIANCE)),
@@ -5625,6 +6158,7 @@ const AdminDefinition = {
                 id: 'DataRetentionSettings',
                 component: DataRetentionSettings,
             },
+            restrictedIndicator: getRestrictedIndicator(),
         },
         data_retention_feature_discovery: {
             url: 'compliance/data_retention',
@@ -5648,6 +6182,7 @@ const AdminDefinition = {
                     },
                 ],
             },
+            restrictedIndicator: getRestrictedIndicator(true, LicenseSkus.Enterprise),
         },
         message_export: {
             url: 'compliance/export',
@@ -5680,6 +6215,7 @@ const AdminDefinition = {
                 id: 'MessageExportSettings',
                 component: MessageExportSettings,
             },
+            restrictedIndicator: getRestrictedIndicator(),
         },
         compliance_export_feature_discovery: {
             isDiscovery: true,
@@ -5703,6 +6239,7 @@ const AdminDefinition = {
                     },
                 ],
             },
+            restrictedIndicator: getRestrictedIndicator(true, LicenseSkus.Enterprise),
         },
         audits: {
             url: 'compliance/monitoring',
@@ -5739,8 +6276,19 @@ const AdminDefinition = {
                         label: t('admin.compliance.enableTitle'),
                         label_default: 'Enable Compliance Reporting:',
                         help_text: t('admin.compliance.enableDesc'),
-                        help_text_default: 'When true, Mattermost allows compliance reporting from the **Compliance and Auditing** tab. See [documentation](!https://docs.mattermost.com/administration/compliance.html) to learn more.',
-                        help_text_markdown: true,
+                        help_text_default: 'When true, Mattermost allows compliance reporting from the <strong>Compliance and Auditing</strong> tab. See <link>documentation</link> to learn more.',
+                        help_text_values: {
+                            link: (msg) => (
+                                <ExternalLink
+                                    location='admin_console'
+                                    href='https://docs.mattermost.com/administration/compliance.html'
+                                >
+                                    {msg}
+                                </ExternalLink>
+                            ),
+                            strong: (msg) => <strong>{msg}</strong>,
+                        },
+                        help_text_markdown: false,
                         isHidden: it.not(it.licensedForFeature('Compliance')),
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.COMPLIANCE.COMPLIANCE_MONITORING)),
                     },
@@ -5797,6 +6345,7 @@ const AdminDefinition = {
                 id: 'TermsOfServiceSettings',
                 component: CustomTermsOfServiceSettings,
             },
+            restrictedIndicator: getRestrictedIndicator(),
         },
         custom_terms_of_service_feature_discovery: {
             url: 'compliance/custom_terms_of_service',
@@ -5820,10 +6369,17 @@ const AdminDefinition = {
                     },
                 ],
             },
+            restrictedIndicator: getRestrictedIndicator(true, LicenseSkus.Enterprise),
         },
     },
     experimental: {
-        icon: 'fa-flask',
+        icon: (
+            <FlaskOutlineIcon
+                size={16}
+                className={'category-icon fa'}
+                color={'currentColor'}
+            />
+        ),
         sectionTitle: t('admin.sidebar.experimental'),
         sectionTitleDefault: 'Experimental',
         isHidden: it.not(it.userHasReadPermissionOnSomeResources(RESOURCE_KEYS.EXPERIMENTAL)),
@@ -5986,8 +6542,18 @@ const AdminDefinition = {
                         label: t('admin.experimental.clientSideCertEnable.title'),
                         label_default: 'Enable Client-Side Certification:',
                         help_text: t('admin.experimental.clientSideCertEnable.desc'),
-                        help_text_default: 'Enables client-side certification for your Mattermost server. See [documentation](!https://docs.mattermost.com/deployment/certificate-based-authentication.html) to learn more.',
-                        help_text_markdown: true,
+                        help_text_default: 'Enables client-side certification for your Mattermost server. See <link>documentation</link> to learn more.',
+                        help_text_values: {
+                            link: (msg) => (
+                                <ExternalLink
+                                    location='admin_console'
+                                    href='https://docs.mattermost.com/deployment/certificate-based-authentication.html'
+                                >
+                                    {msg}
+                                </ExternalLink>
+                            ),
+                        },
+                        help_text_markdown: false,
                         isHidden: it.not(it.any(
                             it.licensedForSku(LicenseSkus.Enterprise),
                             it.licensedForSku(LicenseSkus.E20))),
@@ -6037,8 +6603,18 @@ const AdminDefinition = {
                         label: t('admin.experimental.experimentalEnableHardenedMode.title'),
                         label_default: 'Enable Hardened Mode:',
                         help_text: t('admin.experimental.experimentalEnableHardenedMode.desc'),
-                        help_text_default: 'Enables a hardened mode for Mattermost that makes user experience trade-offs in the interest of security. See [documentation](!https://docs.mattermost.com/administration/config-settings.html#enable-hardened-mode-experimental) to learn more.',
-                        help_text_markdown: true,
+                        help_text_default: 'Enables a hardened mode for Mattermost that makes user experience trade-offs in the interest of security. See <link>documentation</link> to learn more.',
+                        help_text_values: {
+                            link: (msg) => (
+                                <ExternalLink
+                                    location='admin_console'
+                                    href='https://docs.mattermost.com/administration/config-settings.html#enable-hardened-mode-experimental'
+                                >
+                                    {msg}
+                                </ExternalLink>
+                            ),
+                        },
+                        help_text_markdown: false,
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.EXPERIMENTAL.FEATURES)),
                     },
                     {
@@ -6187,16 +6763,15 @@ const AdminDefinition = {
                         label_default: 'Use Improved SAML Library (Beta):',
                         help_text: t('admin.experimental.experimentalUseNewSAMLLibrary.desc'),
                         help_text_default: 'Enable an updated SAML Library, which does not require the XML Security Library (xmlsec1) to be installed. Warning: Not all providers have been tested. If you experience issues, please contact <linkSupport>support</linkSupport>. Changing this setting requires a server restart before taking effect.',
+                        help_text_markdown: false,
                         help_text_values: {
                             linkSupport: (msg) => (
-                                <a
+                                <ExternalLink
+                                    location='admin_console'
                                     href='https://mattermost.com/support'
-                                    referrer='noreferrer'
-                                    target='_blank'
-                                    rel='noreferrer'
                                 >
                                     {msg}
-                                </a>
+                                </ExternalLink>
                             ),
                         },
                         isHidden: true || it.not(it.licensedForFeature('SAML')),
@@ -6275,7 +6850,11 @@ const AdminDefinition = {
                         help_text: t('admin.experimental.enableSharedChannels.desc'),
                         help_text_default: 'Toggles Shared Channels',
                         help_text_markdown: false,
-                        isHidden: it.not(it.licensedForFeature('SharedChannels')),
+                        isHidden: it.not(it.any(
+                            it.licensedForFeature('SharedChannels'),
+                            it.licensedForSku(LicenseSkus.Enterprise),
+                            it.licensedForSku(LicenseSkus.Professional),
+                        )),
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.EXPERIMENTAL.FEATURES)),
                     },
                     {
@@ -6286,6 +6865,26 @@ const AdminDefinition = {
                         help_text: t('admin.experimental.enableAppBar.desc'),
                         help_text_default: 'When true, all integrations move from the channel header to the App Bar. Channel header plugin icons that haven\'t explicitly registered an App Bar icon will be moved to the App Bar which may result in rendering issues. [See the documentation to learn more](https://docs.mattermost.com/welcome/what-changed-in-v70.html).',
                         help_text_markdown: true,
+                        isHidden: it.licensedForFeature('Cloud'),
+                        isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.EXPERIMENTAL.FEATURES)),
+                    },
+                    {
+                        type: Constants.SettingsTypes.TYPE_BOOL,
+                        key: 'ExperimentalSettings.PatchPluginsReactDOM',
+                        label: t('admin.experimental.patchPluginsReactDOM.title'),
+                        label_default: 'Patch React DOM used by plugins:',
+                        help_text: t('admin.experimental.patchPluginsReactDOM.desc'),
+                        help_text_default: 'When true, client-side plugins will be patched to use the version of React DOM provided by the web app. This should only be enabled if plugins break after upgrading to Mattermost 7.6. The server must be restarted for this setting to take effect. See the <link>Important Upgrade Notes</link> for more information.',
+                        help_text_values: {
+                            link: (msg) => (
+                                <ExternalLink
+                                    location='admin_console'
+                                    href='https://docs.mattermost.com/upgrade/important-upgrade-notes.html'
+                                >
+                                    {msg}
+                                </ExternalLink>
+                            ),
+                        },
                         isHidden: it.licensedForFeature('Cloud'),
                         isDisabled: it.not(it.userHasWritePermissionOnResource(RESOURCE_KEYS.EXPERIMENTAL.FEATURES)),
                     },

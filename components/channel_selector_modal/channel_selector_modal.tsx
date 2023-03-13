@@ -14,7 +14,7 @@ import {localizeMessage, compareChannels} from 'utils/utils';
 
 import MultiSelect, {Value} from 'components/multiselect/multiselect';
 
-import FormattedMarkdownMessage from 'components/formatted_markdown_message.jsx';
+import FormattedMarkdownMessage from 'components/formatted_markdown_message';
 
 type ChannelWithTeamDataValue = ChannelWithTeamData & Value;
 
@@ -62,7 +62,7 @@ export default class ChannelSelectorModal extends React.PureComponent<Props, Sta
         });
     }
 
-    componentDidUpdate(prevProps: Props) { // eslint-disable-line camelcase
+    componentDidUpdate(prevProps: Props) {
         if (prevProps.searchTerm !== this.props.searchTerm) {
             clearTimeout(this.searchTimeoutId);
 

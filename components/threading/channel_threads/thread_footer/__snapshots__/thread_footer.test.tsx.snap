@@ -65,6 +65,7 @@ exports[`components/threading/channel_threads/thread_footer should report total 
         onMouseLeave={[Function]}
       >
         <UserAvatar
+          disableProfileOverlay={false}
           key="5"
           overlayProps={
             Object {
@@ -79,14 +80,15 @@ exports[`components/threading/channel_threads/thread_footer should report total 
               "background": "rgb(240, 240, 241)",
             }
           }
-          tabIndex={0}
           userId="5"
         >
           <OverlayTrigger
             defaultOverlayShown={false}
+            disabled={false}
             overlay={
               <Memo(Connect(injectIntl(ProfilePopover)))
                 className="user-profile-popover"
+                hide={[Function]}
                 src="/api/v4/users/5/image?_=0"
                 userId="5"
               />
@@ -100,6 +102,7 @@ exports[`components/threading/channel_threads/thread_footer should report total 
               overlay={
                 <OverlayWrapper
                   className="user-profile-popover"
+                  hide={[Function]}
                   intl={
                     Object {
                       "defaultFormats": Object {},
@@ -233,38 +236,48 @@ exports[`components/threading/channel_threads/thread_footer should report total 
                       ]
                     }
                   >
-                    <button
+                    <RoundButton
                       className="style--none"
                       onBlur={[Function]}
                       onClick={[Function]}
                       onFocus={[Function]}
                       onMouseOut={[Function]}
                       onMouseOver={[Function]}
-                      tabIndex={-1}
                     >
-                      <Memo(Avatar)
-                        size="sm"
-                        style={
-                          Object {
-                            "background": "rgb(240, 240, 241)",
-                          }
-                        }
-                        tabIndex={0}
-                        url="/api/v4/users/5/image?_=0"
+                      <button
+                        className="RoundButton-dvlhqG gHOQXq style--none"
+                        onBlur={[Function]}
+                        onClick={[Function]}
+                        onFocus={[Function]}
+                        onMouseOut={[Function]}
+                        onMouseOver={[Function]}
                       >
-                        <img
-                          alt="user profile image"
-                          className="Avatar Avatar-sm"
-                          src="/api/v4/users/5/image?_=0"
+                        <Memo(Avatar)
+                          size="sm"
                           style={
                             Object {
                               "background": "rgb(240, 240, 241)",
                             }
                           }
-                          tabIndex={0}
-                        />
-                      </Memo(Avatar)>
-                    </button>
+                          tabIndex={-1}
+                          url="/api/v4/users/5/image?_=0"
+                        >
+                          <img
+                            alt="user profile image"
+                            className="Avatar Avatar-sm"
+                            loading="lazy"
+                            onError={[Function]}
+                            src="/api/v4/users/5/image?_=0"
+                            style={
+                              Object {
+                                "background": "rgb(240, 240, 241)",
+                              }
+                            }
+                            tabIndex={-1}
+                          />
+                        </Memo(Avatar)>
+                      </button>
+                    </RoundButton>
                   </OverlayTrigger>
                 </OverlayTrigger>
               </SimpleTooltip>
@@ -272,6 +285,7 @@ exports[`components/threading/channel_threads/thread_footer should report total 
           </OverlayTrigger>
         </UserAvatar>
         <UserAvatar
+          disableProfileOverlay={false}
           key="4"
           overlayProps={
             Object {
@@ -286,14 +300,15 @@ exports[`components/threading/channel_threads/thread_footer should report total 
               "background": "rgb(240, 240, 241)",
             }
           }
-          tabIndex={0}
           userId="4"
         >
           <OverlayTrigger
             defaultOverlayShown={false}
+            disabled={false}
             overlay={
               <Memo(Connect(injectIntl(ProfilePopover)))
                 className="user-profile-popover"
+                hide={[Function]}
                 src="/api/v4/users/4/image?_=0"
                 userId="4"
               />
@@ -307,6 +322,7 @@ exports[`components/threading/channel_threads/thread_footer should report total 
               overlay={
                 <OverlayWrapper
                   className="user-profile-popover"
+                  hide={[Function]}
                   intl={
                     Object {
                       "defaultFormats": Object {},
@@ -440,38 +456,48 @@ exports[`components/threading/channel_threads/thread_footer should report total 
                       ]
                     }
                   >
-                    <button
+                    <RoundButton
                       className="style--none"
                       onBlur={[Function]}
                       onClick={[Function]}
                       onFocus={[Function]}
                       onMouseOut={[Function]}
                       onMouseOver={[Function]}
-                      tabIndex={-1}
                     >
-                      <Memo(Avatar)
-                        size="sm"
-                        style={
-                          Object {
-                            "background": "rgb(240, 240, 241)",
-                          }
-                        }
-                        tabIndex={0}
-                        url="/api/v4/users/4/image?_=0"
+                      <button
+                        className="RoundButton-dvlhqG gHOQXq style--none"
+                        onBlur={[Function]}
+                        onClick={[Function]}
+                        onFocus={[Function]}
+                        onMouseOut={[Function]}
+                        onMouseOver={[Function]}
                       >
-                        <img
-                          alt="user profile image"
-                          className="Avatar Avatar-sm"
-                          src="/api/v4/users/4/image?_=0"
+                        <Memo(Avatar)
+                          size="sm"
                           style={
                             Object {
                               "background": "rgb(240, 240, 241)",
                             }
                           }
-                          tabIndex={0}
-                        />
-                      </Memo(Avatar)>
-                    </button>
+                          tabIndex={-1}
+                          url="/api/v4/users/4/image?_=0"
+                        >
+                          <img
+                            alt="user profile image"
+                            className="Avatar Avatar-sm"
+                            loading="lazy"
+                            onError={[Function]}
+                            src="/api/v4/users/4/image?_=0"
+                            style={
+                              Object {
+                                "background": "rgb(240, 240, 241)",
+                              }
+                            }
+                            tabIndex={-1}
+                          />
+                        </Memo(Avatar)>
+                      </button>
+                    </RoundButton>
                   </OverlayTrigger>
                 </OverlayTrigger>
               </SimpleTooltip>
@@ -479,6 +505,7 @@ exports[`components/threading/channel_threads/thread_footer should report total 
           </OverlayTrigger>
         </UserAvatar>
         <UserAvatar
+          disableProfileOverlay={false}
           key="3"
           overlayProps={
             Object {
@@ -493,14 +520,15 @@ exports[`components/threading/channel_threads/thread_footer should report total 
               "background": "rgb(240, 240, 241)",
             }
           }
-          tabIndex={0}
           userId="3"
         >
           <OverlayTrigger
             defaultOverlayShown={false}
+            disabled={false}
             overlay={
               <Memo(Connect(injectIntl(ProfilePopover)))
                 className="user-profile-popover"
+                hide={[Function]}
                 src="/api/v4/users/3/image?_=0"
                 userId="3"
               />
@@ -514,6 +542,7 @@ exports[`components/threading/channel_threads/thread_footer should report total 
               overlay={
                 <OverlayWrapper
                   className="user-profile-popover"
+                  hide={[Function]}
                   intl={
                     Object {
                       "defaultFormats": Object {},
@@ -647,38 +676,48 @@ exports[`components/threading/channel_threads/thread_footer should report total 
                       ]
                     }
                   >
-                    <button
+                    <RoundButton
                       className="style--none"
                       onBlur={[Function]}
                       onClick={[Function]}
                       onFocus={[Function]}
                       onMouseOut={[Function]}
                       onMouseOver={[Function]}
-                      tabIndex={-1}
                     >
-                      <Memo(Avatar)
-                        size="sm"
-                        style={
-                          Object {
-                            "background": "rgb(240, 240, 241)",
-                          }
-                        }
-                        tabIndex={0}
-                        url="/api/v4/users/3/image?_=0"
+                      <button
+                        className="RoundButton-dvlhqG gHOQXq style--none"
+                        onBlur={[Function]}
+                        onClick={[Function]}
+                        onFocus={[Function]}
+                        onMouseOut={[Function]}
+                        onMouseOver={[Function]}
                       >
-                        <img
-                          alt="user profile image"
-                          className="Avatar Avatar-sm"
-                          src="/api/v4/users/3/image?_=0"
+                        <Memo(Avatar)
+                          size="sm"
                           style={
                             Object {
                               "background": "rgb(240, 240, 241)",
                             }
                           }
-                          tabIndex={0}
-                        />
-                      </Memo(Avatar)>
-                    </button>
+                          tabIndex={-1}
+                          url="/api/v4/users/3/image?_=0"
+                        >
+                          <img
+                            alt="user profile image"
+                            className="Avatar Avatar-sm"
+                            loading="lazy"
+                            onError={[Function]}
+                            src="/api/v4/users/3/image?_=0"
+                            style={
+                              Object {
+                                "background": "rgb(240, 240, 241)",
+                              }
+                            }
+                            tabIndex={-1}
+                          />
+                        </Memo(Avatar)>
+                      </button>
+                    </RoundButton>
                   </OverlayTrigger>
                 </OverlayTrigger>
               </SimpleTooltip>
@@ -979,7 +1018,6 @@ exports[`components/threading/channel_threads/thread_footer should report total 
               values={
                 Object {
                   "formatted": <Memo(SemanticTime)
-                    aria-label="Mon Apr 01 2019 23:31:44 GMT+0000"
                     value={2019-04-01T23:31:44.000Z}
                   >
                     April 1, 2019
@@ -990,13 +1028,11 @@ exports[`components/threading/channel_threads/thread_footer should report total 
               <span>
                 Last reply 
                 <Memo(SemanticTime)
-                  aria-label="Mon Apr 01 2019 23:31:44 GMT+0000"
                   key=".$.1"
                   value={2019-04-01T23:31:44.000Z}
                 >
                   <time
-                    aria-label="Mon Apr 01 2019 23:31:44 GMT+0000"
-                    dateTime="2019-04-01T23:31:44.000Z"
+                    dateTime="2019-04-01T23:31:44.000"
                   >
                     April 1, 2019
                   </time>
@@ -1157,6 +1193,7 @@ exports[`components/threading/channel_threads/thread_footer should show unread i
         onMouseLeave={[Function]}
       >
         <UserAvatar
+          disableProfileOverlay={false}
           key="5"
           overlayProps={
             Object {
@@ -1171,14 +1208,15 @@ exports[`components/threading/channel_threads/thread_footer should show unread i
               "background": "rgb(240, 240, 241)",
             }
           }
-          tabIndex={0}
           userId="5"
         >
           <OverlayTrigger
             defaultOverlayShown={false}
+            disabled={false}
             overlay={
               <Memo(Connect(injectIntl(ProfilePopover)))
                 className="user-profile-popover"
+                hide={[Function]}
                 src="/api/v4/users/5/image?_=0"
                 userId="5"
               />
@@ -1192,6 +1230,7 @@ exports[`components/threading/channel_threads/thread_footer should show unread i
               overlay={
                 <OverlayWrapper
                   className="user-profile-popover"
+                  hide={[Function]}
                   intl={
                     Object {
                       "defaultFormats": Object {},
@@ -1325,38 +1364,48 @@ exports[`components/threading/channel_threads/thread_footer should show unread i
                       ]
                     }
                   >
-                    <button
+                    <RoundButton
                       className="style--none"
                       onBlur={[Function]}
                       onClick={[Function]}
                       onFocus={[Function]}
                       onMouseOut={[Function]}
                       onMouseOver={[Function]}
-                      tabIndex={-1}
                     >
-                      <Memo(Avatar)
-                        size="sm"
-                        style={
-                          Object {
-                            "background": "rgb(240, 240, 241)",
-                          }
-                        }
-                        tabIndex={0}
-                        url="/api/v4/users/5/image?_=0"
+                      <button
+                        className="RoundButton-dvlhqG gHOQXq style--none"
+                        onBlur={[Function]}
+                        onClick={[Function]}
+                        onFocus={[Function]}
+                        onMouseOut={[Function]}
+                        onMouseOver={[Function]}
                       >
-                        <img
-                          alt="user profile image"
-                          className="Avatar Avatar-sm"
-                          src="/api/v4/users/5/image?_=0"
+                        <Memo(Avatar)
+                          size="sm"
                           style={
                             Object {
                               "background": "rgb(240, 240, 241)",
                             }
                           }
-                          tabIndex={0}
-                        />
-                      </Memo(Avatar)>
-                    </button>
+                          tabIndex={-1}
+                          url="/api/v4/users/5/image?_=0"
+                        >
+                          <img
+                            alt="user profile image"
+                            className="Avatar Avatar-sm"
+                            loading="lazy"
+                            onError={[Function]}
+                            src="/api/v4/users/5/image?_=0"
+                            style={
+                              Object {
+                                "background": "rgb(240, 240, 241)",
+                              }
+                            }
+                            tabIndex={-1}
+                          />
+                        </Memo(Avatar)>
+                      </button>
+                    </RoundButton>
                   </OverlayTrigger>
                 </OverlayTrigger>
               </SimpleTooltip>
@@ -1364,6 +1413,7 @@ exports[`components/threading/channel_threads/thread_footer should show unread i
           </OverlayTrigger>
         </UserAvatar>
         <UserAvatar
+          disableProfileOverlay={false}
           key="4"
           overlayProps={
             Object {
@@ -1378,14 +1428,15 @@ exports[`components/threading/channel_threads/thread_footer should show unread i
               "background": "rgb(240, 240, 241)",
             }
           }
-          tabIndex={0}
           userId="4"
         >
           <OverlayTrigger
             defaultOverlayShown={false}
+            disabled={false}
             overlay={
               <Memo(Connect(injectIntl(ProfilePopover)))
                 className="user-profile-popover"
+                hide={[Function]}
                 src="/api/v4/users/4/image?_=0"
                 userId="4"
               />
@@ -1399,6 +1450,7 @@ exports[`components/threading/channel_threads/thread_footer should show unread i
               overlay={
                 <OverlayWrapper
                   className="user-profile-popover"
+                  hide={[Function]}
                   intl={
                     Object {
                       "defaultFormats": Object {},
@@ -1532,38 +1584,48 @@ exports[`components/threading/channel_threads/thread_footer should show unread i
                       ]
                     }
                   >
-                    <button
+                    <RoundButton
                       className="style--none"
                       onBlur={[Function]}
                       onClick={[Function]}
                       onFocus={[Function]}
                       onMouseOut={[Function]}
                       onMouseOver={[Function]}
-                      tabIndex={-1}
                     >
-                      <Memo(Avatar)
-                        size="sm"
-                        style={
-                          Object {
-                            "background": "rgb(240, 240, 241)",
-                          }
-                        }
-                        tabIndex={0}
-                        url="/api/v4/users/4/image?_=0"
+                      <button
+                        className="RoundButton-dvlhqG gHOQXq style--none"
+                        onBlur={[Function]}
+                        onClick={[Function]}
+                        onFocus={[Function]}
+                        onMouseOut={[Function]}
+                        onMouseOver={[Function]}
                       >
-                        <img
-                          alt="user profile image"
-                          className="Avatar Avatar-sm"
-                          src="/api/v4/users/4/image?_=0"
+                        <Memo(Avatar)
+                          size="sm"
                           style={
                             Object {
                               "background": "rgb(240, 240, 241)",
                             }
                           }
-                          tabIndex={0}
-                        />
-                      </Memo(Avatar)>
-                    </button>
+                          tabIndex={-1}
+                          url="/api/v4/users/4/image?_=0"
+                        >
+                          <img
+                            alt="user profile image"
+                            className="Avatar Avatar-sm"
+                            loading="lazy"
+                            onError={[Function]}
+                            src="/api/v4/users/4/image?_=0"
+                            style={
+                              Object {
+                                "background": "rgb(240, 240, 241)",
+                              }
+                            }
+                            tabIndex={-1}
+                          />
+                        </Memo(Avatar)>
+                      </button>
+                    </RoundButton>
                   </OverlayTrigger>
                 </OverlayTrigger>
               </SimpleTooltip>
@@ -1571,6 +1633,7 @@ exports[`components/threading/channel_threads/thread_footer should show unread i
           </OverlayTrigger>
         </UserAvatar>
         <UserAvatar
+          disableProfileOverlay={false}
           key="3"
           overlayProps={
             Object {
@@ -1585,14 +1648,15 @@ exports[`components/threading/channel_threads/thread_footer should show unread i
               "background": "rgb(240, 240, 241)",
             }
           }
-          tabIndex={0}
           userId="3"
         >
           <OverlayTrigger
             defaultOverlayShown={false}
+            disabled={false}
             overlay={
               <Memo(Connect(injectIntl(ProfilePopover)))
                 className="user-profile-popover"
+                hide={[Function]}
                 src="/api/v4/users/3/image?_=0"
                 userId="3"
               />
@@ -1606,6 +1670,7 @@ exports[`components/threading/channel_threads/thread_footer should show unread i
               overlay={
                 <OverlayWrapper
                   className="user-profile-popover"
+                  hide={[Function]}
                   intl={
                     Object {
                       "defaultFormats": Object {},
@@ -1739,38 +1804,48 @@ exports[`components/threading/channel_threads/thread_footer should show unread i
                       ]
                     }
                   >
-                    <button
+                    <RoundButton
                       className="style--none"
                       onBlur={[Function]}
                       onClick={[Function]}
                       onFocus={[Function]}
                       onMouseOut={[Function]}
                       onMouseOver={[Function]}
-                      tabIndex={-1}
                     >
-                      <Memo(Avatar)
-                        size="sm"
-                        style={
-                          Object {
-                            "background": "rgb(240, 240, 241)",
-                          }
-                        }
-                        tabIndex={0}
-                        url="/api/v4/users/3/image?_=0"
+                      <button
+                        className="RoundButton-dvlhqG gHOQXq style--none"
+                        onBlur={[Function]}
+                        onClick={[Function]}
+                        onFocus={[Function]}
+                        onMouseOut={[Function]}
+                        onMouseOver={[Function]}
                       >
-                        <img
-                          alt="user profile image"
-                          className="Avatar Avatar-sm"
-                          src="/api/v4/users/3/image?_=0"
+                        <Memo(Avatar)
+                          size="sm"
                           style={
                             Object {
                               "background": "rgb(240, 240, 241)",
                             }
                           }
-                          tabIndex={0}
-                        />
-                      </Memo(Avatar)>
-                    </button>
+                          tabIndex={-1}
+                          url="/api/v4/users/3/image?_=0"
+                        >
+                          <img
+                            alt="user profile image"
+                            className="Avatar Avatar-sm"
+                            loading="lazy"
+                            onError={[Function]}
+                            src="/api/v4/users/3/image?_=0"
+                            style={
+                              Object {
+                                "background": "rgb(240, 240, 241)",
+                              }
+                            }
+                            tabIndex={-1}
+                          />
+                        </Memo(Avatar)>
+                      </button>
+                    </RoundButton>
                   </OverlayTrigger>
                 </OverlayTrigger>
               </SimpleTooltip>
@@ -2071,7 +2146,6 @@ exports[`components/threading/channel_threads/thread_footer should show unread i
               values={
                 Object {
                   "formatted": <Memo(SemanticTime)
-                    aria-label="Mon Apr 01 2019 23:31:44 GMT+0000"
                     value={2019-04-01T23:31:44.000Z}
                   >
                     April 1, 2019
@@ -2082,13 +2156,11 @@ exports[`components/threading/channel_threads/thread_footer should show unread i
               <span>
                 Last reply 
                 <Memo(SemanticTime)
-                  aria-label="Mon Apr 01 2019 23:31:44 GMT+0000"
                   key=".$.1"
                   value={2019-04-01T23:31:44.000Z}
                 >
                   <time
-                    aria-label="Mon Apr 01 2019 23:31:44 GMT+0000"
-                    dateTime="2019-04-01T23:31:44.000Z"
+                    dateTime="2019-04-01T23:31:44.000"
                   >
                     April 1, 2019
                   </time>

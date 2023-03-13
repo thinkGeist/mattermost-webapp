@@ -28,7 +28,7 @@ type Props = {
     handleClose?: (e?: any) => void;
     showModal?: boolean;
     announcementBarCount?: number;
-    onButtonClick?: () => void;
+    onButtonClick?: (e?: any) => void;
     modalButtonText?: string;
     modalButtonDefaultText?: string;
     showLinkAsButton: boolean;
@@ -38,6 +38,7 @@ type Props = {
         incrementAnnouncementBarCount: () => void;
         decrementAnnouncementBarCount: () => void;
     };
+    showCTA?: boolean;
 }
 
 type State = {
@@ -67,6 +68,7 @@ export default class AnnouncementBar extends React.PureComponent<Props, State> {
         type: AnnouncementBarTypes.CRITICAL,
         showLinkAsButton: false,
         isTallBanner: false,
+        showCTA: true,
     }
 
     enableToolTipIfNeeded = () => {
@@ -85,6 +87,12 @@ export default class AnnouncementBar extends React.PureComponent<Props, State> {
     componentDidMount() {
         this.props.actions.incrementAnnouncementBarCount();
         document.body.classList.add('announcement-bar--fixed');
+    }
+
+    componentDidUpdate() {
+        if (this.props.announcementBarCount === 1) {
+            document.body.classList.add('announcement-bar--fixed');
+        }
     }
 
     componentWillUnmount() {
@@ -144,7 +152,7 @@ export default class AnnouncementBar extends React.PureComponent<Props, State> {
         let message = this.props.message;
         if (typeof message == 'string') {
             message = (
-                <FormattedMarkdownMessage id={this.props.message}/>
+                <FormattedMarkdownMessage id={this.props.message as string}/>
             );
         }
         const announcementTooltip = this.state.showTooltip ? (
@@ -162,6 +170,8 @@ export default class AnnouncementBar extends React.PureComponent<Props, State> {
             <div
                 className={barClass}
                 style={barStyle}
+                // eslint-disable-next-line react/no-unknown-property
+                css={{gridArea: 'announcement'}}
             >
                 <OverlayTrigger
                     delayShow={Constants.OVERLAY_TIME_DELAY}
@@ -178,7 +188,7 @@ export default class AnnouncementBar extends React.PureComponent<Props, State> {
                             {message}
                         </span>
                         {
-                            !this.props.showLinkAsButton &&
+                            !this.props.showLinkAsButton && this.props.showCTA &&
                             <span className='announcement-bar__link'>
                                 {this.props.showModal &&
                                 <FormattedMessage
@@ -187,7 +197,7 @@ export default class AnnouncementBar extends React.PureComponent<Props, State> {
                                 >
                                     {(linkmessage) => (
                                         <ToggleModalButton
-                                            ariaLabel={linkmessage}
+                                            ariaLabel={linkmessage as unknown as string}
                                             className={'color--link--adminack'}
                                             dialogType={WarnMetricAckModal}
                                             onClick={() => trackEvent('admin', 'click_warn_metric_learn_more')}
@@ -205,7 +215,7 @@ export default class AnnouncementBar extends React.PureComponent<Props, State> {
                             </span>
                         }
                         {
-                            this.props.showLinkAsButton &&
+                            this.props.showLinkAsButton && this.props.showCTA &&
                             <button
                                 className='upgrade-button'
                                 onClick={this.props.onButtonClick}

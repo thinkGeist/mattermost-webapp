@@ -11,9 +11,10 @@ import DateSeparator from 'components/post_view/date_separator';
 import NewMessageSeparator from 'components/post_view/new_message_separator/new_message_separator';
 import {Props as TimestampProps} from 'components/timestamp/timestamp';
 
-import {getPreviousPostId} from 'utils/post_utils';
+import PostComponent from 'components/post';
 
-import RootPost from './root_post';
+import {Locations} from 'utils/constants';
+
 import Reply from './reply';
 
 type Props = {
@@ -23,12 +24,13 @@ type Props = {
     isLastPost: boolean;
     listId: string;
     onCardClick: (post: Post) => void;
-    onCardClickPost: (post: Post) => void;
     previousPostId: string;
     teamId: string;
     timestampProps?: Partial<TimestampProps>;
+    lastPost: Post;
 };
 
+function noop() {}
 function ThreadViewerRow({
     a11yIndex,
     currentUserId,
@@ -36,7 +38,6 @@ function ThreadViewerRow({
     isLastPost,
     listId,
     onCardClick,
-    onCardClickPost,
     previousPostId,
     teamId,
     timestampProps,
@@ -57,23 +58,27 @@ function ThreadViewerRow({
 
     case isRootPost:
         return (
-            <RootPost
-                currentUserId={currentUserId}
-                id={listId}
+            <PostComponent
+                postId={listId}
                 isLastPost={isLastPost}
-                onCardClick={onCardClick}
+                handleCardClick={onCardClick}
                 teamId={teamId}
                 timestampProps={timestampProps}
+                location={Locations.RHS_ROOT}
             />
         );
-    case PostListUtils.isCombinedUserActivityPost(listId):
+    case PostListUtils.isCombinedUserActivityPost(listId): {
         return (
             <CombinedUserActivityPost
+                location={Locations.CENTER}
                 combinedId={listId}
-                previousPostId={getPreviousPostId}
+                previousPostId={previousPostId}
                 isLastPost={isLastPost}
+                shouldHighlight={false}
+                togglePostMenu={noop}
             />
         );
+    }
     default:
         return (
             <Reply
@@ -81,7 +86,7 @@ function ThreadViewerRow({
                 currentUserId={currentUserId}
                 id={listId}
                 isLastPost={isLastPost}
-                onCardClick={onCardClickPost}
+                onCardClick={onCardClick}
                 previousPostId={previousPostId}
                 teamId={teamId}
                 timestampProps={timestampProps}

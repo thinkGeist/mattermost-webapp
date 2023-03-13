@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {ClipboardEventHandler, memo, useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import classNames from 'classnames';
 import {useIntl} from 'react-intl';
 import {EmoticonPlusOutlineIcon} from '@mattermost/compass-icons/components';
@@ -9,23 +9,25 @@ import {EmoticonPlusOutlineIcon} from '@mattermost/compass-icons/components';
 import {Post} from '@mattermost/types/posts';
 import {Emoji, SystemEmoji} from '@mattermost/types/emojis';
 
-import {AppEvents, Constants, ModalIdentifiers} from 'utils/constants';
+import {AppEvents, Constants, ModalIdentifiers, StoragePrefixes} from 'utils/constants';
 import {
     formatGithubCodePaste,
-    formatMarkdownTableMessage,
+    formatMarkdownMessage,
     getTable,
+    hasHtmlLink,
     isGitHubCodeBlock,
 } from 'utils/paste';
 import {postMessageOnKeyPress, splitMessageBasedOnCaretPosition} from 'utils/post_utils';
-import {isMac} from 'utils/utils';
 import {applyMarkdown, ApplyMarkdownOptions} from 'utils/markdown/apply_markdown';
 import * as Utils from 'utils/utils';
 
 import DeletePostModal from 'components/delete_post_modal';
 import EmojiPickerOverlay from 'components/emoji_picker/emoji_picker_overlay';
-import FormattedMarkdownMessage from 'components/formatted_markdown_message';
 import Textbox, {TextboxClass, TextboxElement} from 'components/textbox';
 import {ModalData} from 'types/actions';
+import {PostDraft} from '../../types/store/draft';
+
+import EditPostFooter from './edit_post_footer';
 
 type DialogProps = {
     post?: Post;
@@ -35,18 +37,22 @@ type DialogProps = {
 export type Actions = {
     addMessageIntoHistory: (message: string) => void;
     editPost: (input: Partial<Post>) => Promise<Post>;
+    setDraft: (name: string, value: PostDraft | null) => void;
     unsetEditingPost: () => void;
     openModal: (input: ModalData<DialogProps>) => void;
     scrollPostListToBottom: () => void;
+    getPostEditHistory: (postId: string) => void;
 }
 
 export type Props = {
     canEditPost?: boolean;
     canDeletePost?: boolean;
     readOnlyChannel?: boolean;
+    teamId: string;
     channelId: string;
     codeBlockOnCtrlEnter: boolean;
     ctrlSend: boolean;
+    draft: PostDraft;
     config: {
         EnableEmojiPicker?: string;
         EnableGifPicker?: string;
@@ -60,6 +66,8 @@ export type Props = {
         title?: string;
         isRHS?: boolean;
     };
+    isRHSOpened: boolean;
+    isEditHistoryShowing: boolean;
     actions: Actions;
 };
 
@@ -79,9 +87,9 @@ const {KeyCodes} = Constants;
 const TOP_OFFSET = 0;
 const RIGHT_OFFSET = 10;
 
-const EditPost = ({editingPost, actions, canEditPost, config, ...rest}: Props): JSX.Element | null => {
+const EditPost = ({editingPost, actions, canEditPost, config, channelId, draft, ...rest}: Props): JSX.Element | null => {
     const [editText, setEditText] = useState<string>(
-        editingPost?.post?.message_source || editingPost?.post?.message || '',
+        draft.message || editingPost?.post?.message_source || editingPost?.post?.message || '',
     );
     const [selectionRange, setSelectionRange] = useState<State['selectionRange']>({start: editText.length, end: editText.length});
     const [postError, setPostError] = useState<React.ReactNode | null>(null);
@@ -93,7 +101,36 @@ const EditPost = ({editingPost, actions, canEditPost, config, ...rest}: Props): 
     const emojiButtonRef = useRef<HTMLButtonElement>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
 
+    // using a ref here makes sure that the unmounting callback (saveDraft) is fired with the correct value.
+    // If we would just use the editText value from the state it would be a stale since it is encapsuled in the
+    // function closure on initial render
+    const draftRef = useRef<PostDraft>(draft);
+    const saveDraftFrame = useRef<number|null>();
+
+    const draftStorageId = `${StoragePrefixes.EDIT_DRAFT}${editingPost.postId}`;
+
     const {formatMessage} = useIntl();
+
+    const saveDraft = useCallback(() => {
+        // to be run on unmount and only when there is an active saveDraftFrame timer
+        if (saveDraftFrame.current && editingPost.postId) {
+            actions.setDraft(draftStorageId, draftRef.current);
+            clearTimeout(saveDraftFrame.current);
+            saveDraftFrame.current = null;
+        }
+    }, [actions, draftStorageId, editingPost.postId]);
+
+    useEffect(() => saveDraft, [saveDraft]);
+
+    useEffect(() => {
+        if (saveDraftFrame.current) {
+            clearTimeout(saveDraftFrame.current);
+        }
+
+        saveDraftFrame.current = window.setTimeout(() => {
+            actions.setDraft(draftStorageId, draftRef.current);
+        }, Constants.SAVE_DRAFT_TIMEOUT);
+    }, [actions, draftStorageId, editText]);
 
     useEffect(() => {
         const focusTextBox = () => textboxRef?.current?.focus();
@@ -113,7 +150,8 @@ const EditPost = ({editingPost, actions, canEditPost, config, ...rest}: Props): 
     // just a helper so it's not always needed to update with setting both properties to the same value
     const setCaretPosition = (position: number) => setSelectionRange({start: position, end: position});
 
-    const handlePaste: ClipboardEventHandler<HTMLTextAreaElement> = useCallback(({clipboardData, target, preventDefault}) => {
+    const handlePaste = useCallback((e: ClipboardEvent) => {
+        const {clipboardData, target} = e;
         if (
             !clipboardData ||
             !clipboardData.items ||
@@ -123,27 +161,23 @@ const EditPost = ({editingPost, actions, canEditPost, config, ...rest}: Props): 
             return;
         }
 
+        const hasLinks = hasHtmlLink(clipboardData);
         const table = getTable(clipboardData);
-
-        if (!table) {
+        if (!table && !hasLinks) {
             return;
         }
 
-        preventDefault();
+        e.preventDefault();
 
         let message = editText;
         let newCaretPosition = selectionRange.start;
 
         if (table && isGitHubCodeBlock(table.className)) {
-            const {formattedMessage, formattedCodeBlock} = formatGithubCodePaste(
-                selectionRange.start,
-                message,
-                clipboardData,
-            );
+            const {formattedMessage, formattedCodeBlock} = formatGithubCodePaste({selectionStart: (target as any).selectionStart, selectionEnd: (target as any).selectionEnd, message, clipboardData});
             message = formattedMessage;
             newCaretPosition = selectionRange.start + formattedCodeBlock.length;
-        } else if (table) {
-            message = formatMarkdownTableMessage(table, editText.trim(), newCaretPosition);
+        } else {
+            message = formatMarkdownMessage(clipboardData, editText.trim(), newCaretPosition);
             newCaretPosition = message.length - (editText.length - newCaretPosition);
         }
 
@@ -186,6 +220,8 @@ const EditPost = ({editingPost, actions, canEditPost, config, ...rest}: Props): 
         actions.unsetEditingPost();
     };
 
+    const handleAutomatedRefocusAndExit = () => handleRefocusAndExit(editingPost.refocusId || null);
+
     const handleEdit = async () => {
         if (!editingPost.post || isSaveDisabled()) {
             return;
@@ -204,7 +240,7 @@ const EditPost = ({editingPost, actions, canEditPost, config, ...rest}: Props): 
         }
 
         if (updatedPost.message === (editingPost.post?.message_source || editingPost.post?.message)) {
-            handleRefocusAndExit(editingPost.refocusId || null);
+            handleAutomatedRefocusAndExit();
             return;
         }
 
@@ -228,8 +264,11 @@ const EditPost = ({editingPost, actions, canEditPost, config, ...rest}: Props): 
         }
 
         await actions.editPost(updatedPost as Post);
+        if (rest.isRHSOpened && rest.isEditHistoryShowing) {
+            actions.getPostEditHistory(editingPost.postId || '');
+        }
 
-        handleRefocusAndExit(editingPost.refocusId || null);
+        handleAutomatedRefocusAndExit();
     };
 
     const handleEditKeyPress = (e: React.KeyboardEvent) => {
@@ -278,7 +317,7 @@ const EditPost = ({editingPost, actions, canEditPost, config, ...rest}: Props): 
         } else if (ctrlEnterKeyCombo) {
             handleEdit();
         } else if (Utils.isKeyPressed(e, KeyCodes.ESCAPE) && !showEmojiPicker) {
-            handleRefocusAndExit(editingPost.refocusId || null);
+            handleAutomatedRefocusAndExit();
         } else if (ctrlAltCombo && markdownLinkKey) {
             applyHotkeyMarkdown({
                 markdownMode: 'link',
@@ -309,7 +348,16 @@ const EditPost = ({editingPost, actions, canEditPost, config, ...rest}: Props): 
         }
     };
 
-    const handleChange = (e: React.ChangeEvent<TextboxElement>) => setEditText(e.target.value);
+    const handleChange = (e: React.ChangeEvent<TextboxElement>) => {
+        const message = e.target.value;
+
+        draftRef.current = {
+            ...draftRef.current,
+            message,
+        };
+
+        setEditText(message);
+    };
 
     const handleHeightChange = (height: number, maxHeight: number) => setRenderScrollbar(height > maxHeight);
 
@@ -332,9 +380,10 @@ const EditPost = ({editingPost, actions, canEditPost, config, ...rest}: Props): 
             return;
         }
 
-        if (editText === '') {
-            setEditText(`:${emojiAlias}: `);
-        } else {
+        let newMessage = `:${emojiAlias}: `;
+        let newCaretPosition = newMessage.length;
+
+        if (editText.length > 0) {
             const {firstPiece, lastPiece} = splitMessageBasedOnCaretPosition(
                 selectionRange.start,
                 editText,
@@ -342,30 +391,40 @@ const EditPost = ({editingPost, actions, canEditPost, config, ...rest}: Props): 
 
             // check whether the first piece of the message is empty when cursor
             // is placed at beginning of message and avoid adding an empty string at the beginning of the message
-            const newMessage = firstPiece === '' ? `:${emojiAlias}: ${lastPiece}` : `${firstPiece} :${emojiAlias}: ${lastPiece}`;
-            const newCaretPosition = firstPiece === '' ? `:${emojiAlias}: `.length : `${firstPiece} :${emojiAlias}: `.length;
-
-            setEditText(newMessage);
-            setCaretPosition(newCaretPosition);
+            newMessage = firstPiece === '' ? `:${emojiAlias}: ${lastPiece}` : `${firstPiece} :${emojiAlias}: ${lastPiece}`;
+            newCaretPosition = firstPiece === '' ? `:${emojiAlias}: `.length : `${firstPiece} :${emojiAlias}: `.length;
         }
 
+        draftRef.current = {
+            ...draftRef.current,
+            message: newMessage,
+        };
+
+        setEditText(newMessage);
+        setCaretPosition(newCaretPosition);
         setShowEmojiPicker(false);
         textboxRef.current?.focus();
     };
 
     const handleGifClick = (gif: string) => {
-        if (editText === '') {
-            setEditText(gif);
-        } else {
-            const newMessage = (/\s+$/).test(editText) ? `${editText}${gif}` : `${editText} ${gif}`;
-            setEditText(newMessage);
+        let newMessage = gif;
+
+        if (editText.length > 0) {
+            newMessage = (/\s+$/).test(editText) ? `${editText}${gif}` : `${editText} ${gif}`;
         }
 
+        draftRef.current = {
+            ...draftRef.current,
+            message: newMessage,
+        };
+
+        setEditText(newMessage);
         setShowEmojiPicker(false);
         textboxRef.current?.focus();
     };
 
-    const toggleEmojiPicker = () => {
+    const toggleEmojiPicker = (e?: React.MouseEvent<HTMLButtonElement, MouseEvent>): void => {
+        e?.stopPropagation();
         setShowEmojiPicker(!showEmojiPicker);
         if (showEmojiPicker) {
             textboxRef.current?.focus();
@@ -429,7 +488,7 @@ const EditPost = ({editingPost, actions, canEditPost, config, ...rest}: Props): 
                 handlePostError={handlePostError}
                 onPaste={handlePaste}
                 value={editText}
-                channelId={rest.channelId}
+                channelId={channelId}
                 emojiEnabled={config.EnableEmojiPicker === 'true'}
                 createMessage={formatMessage({id: 'edit_post.editPost', defaultMessage: 'Edit the post...'})}
                 supportsCommands={false}
@@ -442,7 +501,10 @@ const EditPost = ({editingPost, actions, canEditPost, config, ...rest}: Props): 
             <div className='post-body__actions'>
                 {emojiPicker}
             </div>
-            <EditPostHelperText ctrlSend={rest.ctrlSend}/>
+            <EditPostFooter
+                onSave={handleEdit}
+                onCancel={handleAutomatedRefocusAndExit}
+            />
             {postError && (
                 <div className={classNames('edit-post-footer', {'has-error': postError})}>
                     <label className={classNames('post-error', errorClass)}>{postError}</label>
@@ -451,25 +513,5 @@ const EditPost = ({editingPost, actions, canEditPost, config, ...rest}: Props): 
         </div>
     );
 };
-
-type EditPostHelperTextProps = {
-    ctrlSend: boolean;
-}
-
-const EditPostHelperText = memo(({ctrlSend}: EditPostHelperTextProps) => {
-    const ctrlSendKey = isMac() ? '⌘+' : 'CTRL+';
-
-    return (
-        <div className='post-body__helper-text'>
-            <FormattedMarkdownMessage
-                id='edit_post.helper_text'
-                defaultMessage='**{key}ENTER** to Save, **ESC** to Cancel'
-                values={{
-                    key: ctrlSend ? ctrlSendKey : '',
-                }}
-            />
-        </div>
-    );
-});
 
 export default EditPost;

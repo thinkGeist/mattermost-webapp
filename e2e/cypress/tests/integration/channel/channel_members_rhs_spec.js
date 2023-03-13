@@ -123,7 +123,7 @@ describe('Channel members RHS', () => {
                 cy.uiGotoDirectMessageWithUser(newUser);
 
                 // * The RHS must not exist
-                cy.uiGetRHS({visible: false});
+                cy.get('#sidebar-right').should('not.exist');
             });
         });
     });
@@ -156,12 +156,12 @@ describe('Channel members RHS', () => {
                 cy.uiGetRHS().findByTestId('channel-member-rhs-search').should('be.visible').type(users[0].username);
 
                 // * we should see them, but nobody else
-                cy.uiGetRHS().findByText(`@${users[0].username}`).should('be.visible');
-                cy.uiGetRHS().findByText(`@${users[1].username}`).should('not.exist');
+                cy.uiGetRHS().contains(`${users[0].username}`).should('be.visible');
+                cy.uiGetRHS().findByText(`${users[1].username}`).should('not.exist');
 
                 // # erase the field
                 cy.uiGetRHS().get('[aria-label="cancel members search"]').should('be.visible').click();
-                cy.uiGetRHS().findByText(`@${users[1].username}`).should('exist');
+                cy.uiGetRHS().contains(`${users[0].username}`).should('exist');
             });
         });
     });
@@ -178,13 +178,13 @@ describe('Channel members RHS', () => {
                         openChannelMembersRhs(testTeam, channel);
 
                         // * Ensure the member is visible
-                        cy.uiGetRHS().findByText(`@${testUser.username}`).should('be.visible');
+                        cy.uiGetRHS().contains(`${testUser.username}`).should('be.visible');
 
                         // # Deactivate the user
                         cy.apiDeactivateUser(testUser.id);
 
                         // * Ensure the user is not visible anymore
-                        cy.uiGetRHS().findByText(`@${testUser.username}`).should('not.exist');
+                        cy.uiGetRHS().findByText(`${testUser.username}`).should('not.exist');
                     });
                 });
             });
@@ -192,6 +192,11 @@ describe('Channel members RHS', () => {
     });
 
     describe('as an admin', () => {
+        before(() => {
+            cy.apiLogout();
+            cy.apiLogin(admin);
+        });
+
         it('should be able to open the RHS from the channel menu', () => {
             // # Go to test channel
             cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
@@ -228,7 +233,7 @@ describe('Channel members RHS', () => {
 
             // * Can see user with their roles, and change it
             cy.uiGetRHS().findByTestId(`memberline-${user.id}`).should('be.visible').within(() => {
-                cy.findByText(`@${user.username}`).should('be.visible');
+                cy.contains(`${user.username}`).should('be.visible');
                 cy.findByText('Member').should('be.visible').click();
                 cy.findByText('Make Channel Admin').should('be.visible').click();
             });
@@ -293,7 +298,7 @@ describe('Channel members RHS', () => {
 
             // # create a user that will not be listed by default
             const lastUser = generateRandomUser();
-            lastUser.username = 'zzzzzzz';
+            lastUser.username = 'zzzzzzz' + Date.now();
             cy.apiCreateUser({user: lastUser}).then(({user: newUser}) => {
                 cy.apiAddUserToTeam(testTeam.id, newUser.id).then(() => {
                     cy.apiAddUserToChannel(channel.id, newUser.id);
@@ -304,13 +309,13 @@ describe('Channel members RHS', () => {
             openChannelMembersRhs(testTeam, channel);
 
             // # make sure that last user is not present in the list
-            cy.uiGetRHS().findByText(`@${lastUser.username}`).should('not.exist');
+            cy.uiGetRHS().findByText(`${lastUser.username}`).should('not.exist');
 
             // # Search for the user user
             cy.uiGetRHS().findByTestId('channel-member-rhs-search').should('be.visible').type(lastUser.username);
 
             // * the user is now existing
-            cy.uiGetRHS().findByText(`@${lastUser.username}`).should('be.visible');
+            cy.uiGetRHS().contains(`${lastUser.username}`).should('be.visible');
         });
     });
 });

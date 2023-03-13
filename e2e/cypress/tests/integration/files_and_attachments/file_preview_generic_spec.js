@@ -94,35 +94,34 @@ function testGenericFile(properties) {
 
     // # Wait until file upload is complete then submit
     waitUntilUploadComplete();
-    cy.get('#post_textbox').should('be.visible').clear().type('{enter}');
+    cy.uiGetPostTextBox().clear().type('{enter}');
     cy.wait(TIMEOUTS.ONE_SEC);
 
     // # Open file preview
     cy.uiGetFileThumbnail(fileName).click();
 
     // * Verify that the preview modal open up
-    cy.uiGetFilePreviewModal().within(() => {
-        switch (type) {
-        case 'text':
-            cy.get('code').should('exist');
-            break;
-        case 'pdf':
-            cy.get('canvas').should('have.length', 10);
-            break;
-        default:
-        }
+    cy.uiGetFilePreviewModal().as('filePreviewModal');
+    switch (type) {
+    case 'text':
+        cy.get('@filePreviewModal').get('code').should('exist');
+        break;
+    case 'pdf':
+        cy.get('@filePreviewModal').get('canvas').should('have.length', 10);
+        break;
+    default:
+    }
 
-        // * Download button should exist
-        cy.uiGetDownloadFilePreviewModal().then((downloadLink) => {
-            expect(downloadLink.attr('download')).to.equal(fileName);
+    // * Download button should exist
+    cy.get('@filePreviewModal').uiGetDownloadFilePreviewModal().then((downloadLink) => {
+        expect(downloadLink.attr('download')).to.equal(fileName);
 
-            const fileAttachmentURL = downloadLink.attr('href');
+        const fileAttachmentURL = downloadLink.attr('href');
 
-            // * Verify that download link has correct name
-            downloadAttachmentAndVerifyItsProperties(fileAttachmentURL, fileName, 'attachment');
-        });
-
-        // # Close modal
-        cy.uiCloseFilePreviewModal();
+        // * Verify that download link has correct name
+        downloadAttachmentAndVerifyItsProperties(fileAttachmentURL, fileName, 'attachment');
     });
+
+    // # Close modal
+    cy.uiCloseFilePreviewModal();
 }

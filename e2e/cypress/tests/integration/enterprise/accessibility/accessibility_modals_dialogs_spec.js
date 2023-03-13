@@ -55,9 +55,9 @@ describe('Verify Accessibility Support in Modals & Dialogs', () => {
 
             // # Search for a text and then check up and down arrow
             cy.findByRole('textbox', {name: 'Search for people'}).
-                type('s', {force: true}).
+                typeWithForce('s').
                 wait(TIMEOUTS.HALF_SEC).
-                type('{downarrow}{downarrow}{downarrow}{uparrow}', {force: true});
+                typeWithForce('{downarrow}{downarrow}{downarrow}{uparrow}');
             cy.get('#multiSelectList').children().eq(2).should('have.class', 'more-modal__row--selected').within(() => {
                 cy.get('.more-modal__name').invoke('text').then((user) => {
                     selectedRowText = user.split(' - ')[0].replace('@', '');
@@ -78,7 +78,7 @@ describe('Verify Accessibility Support in Modals & Dialogs', () => {
             // # Search for an invalid text
             const additionalSearchTerm = 'somethingwhichdoesnotexist';
             cy.findByRole('textbox', {name: 'Search for people'}).clear().
-                type(additionalSearchTerm, {force: true}).
+                typeWithForce(additionalSearchTerm).
                 wait(TIMEOUTS.HALF_SEC);
 
             // * Check if reader can read no results
@@ -104,30 +104,26 @@ describe('Verify Accessibility Support in Modals & Dialogs', () => {
                 cy.uiBrowseOrCreateChannel('Browse Channels').click();
 
                 // * Verify the accessibility support in More Channels Dialog
-                cy.findByRole('dialog', {name: 'More Channels'}).within(() => {
-                    cy.findByRole('heading', {name: 'More Channels'});
+                cy.findByRole('dialog', {name: 'Browse Channels'}).within(() => {
+                    cy.findByRole('heading', {name: 'Browse Channels'});
 
                     // * Verify the accessibility support in search input
                     cy.findByPlaceholderText('Search channels');
 
-                    cy.waitUntil(() => cy.get('#moreChannelsList').then((el) => {
+                    cy.get('#moreChannelsList').should('be.visible').then((el) => {
                         return el[0].children.length === 2;
-                    }));
+                    });
 
-                    // # Focus on the Create Channel button and TAB twice
-                    cy.get('#createNewChannel').focus().tab().tab();
+                    // # Hide already joined channels
+                    cy.findByText('Hide Joined').click();
+
+                    // # Focus on the Create Channel button and TAB three time
+                    cy.get('#createNewChannelButton').focus().tab().tab().tab();
 
                     // * Verify channel name is highlighted and reader reads the channel name and channel description
-                    cy.get('#moreChannelsList').children().eq(0).within(() => {
+                    cy.get('#moreChannelsList').within(() => {
                         const selectedChannel = getChannelAriaLabel(channel);
-                        cy.findByLabelText(selectedChannel).should('be.focused');
-
-                        // * Press Tab and verify if focus changes to Join button
-                        cy.focused().tab();
-                        cy.findByText('Join').parent().should('be.focused');
-
-                        // * Verify previous button should no longer be focused
-                        cy.findByLabelText(selectedChannel).should('not.be.focused');
+                        cy.findByLabelText(selectedChannel).should('be.visible').should('be.focused');
                     });
 
                     // * Press Tab again and verify if focus changes to next row
@@ -164,9 +160,9 @@ describe('Verify Accessibility Support in Modals & Dialogs', () => {
 
             // # Search for a text and then check up and down arrow
             cy.findByRole('textbox', {name: 'Search for people'}).
-                type('u', {force: true}).
+                typeWithForce('u').
                 wait(TIMEOUTS.HALF_SEC).
-                type('{downarrow}{downarrow}{downarrow}{uparrow}', {force: true});
+                typeWithForce('{downarrow}{downarrow}{downarrow}{uparrow}');
             cy.get('#multiSelectList').
                 children().eq(1).
                 should('have.class', 'more-modal__row--selected').
@@ -189,7 +185,7 @@ describe('Verify Accessibility Support in Modals & Dialogs', () => {
 
             // # Search for an invalid text and check if reader can read no results
             cy.findByRole('textbox', {name: 'Search for people'}).
-                type('somethingwhichdoesnotexist', {force: true}).
+                typeWithForce('somethingwhichdoesnotexist').
                 wait(TIMEOUTS.HALF_SEC);
 
             // * Check if reader can read no results
@@ -206,7 +202,7 @@ describe('Verify Accessibility Support in Modals & Dialogs', () => {
 
         // * Verify accessibility support in Invite People Dialog
         cy.get('.InvitationModal').should('have.attr', 'aria-modal', 'true').and('have.attr', 'aria-labelledby', 'invitation_modal_title').and('have.attr', 'role', 'dialog');
-        cy.get('#invitation_modal_title').should('be.visible').and('contain.text', 'Invite members to');
+        cy.get('#invitation_modal_title').should('be.visible').and('contain.text', 'Invite people to');
 
         // # Press tab
         cy.get('button.icon-close').focus().tab({shift: true}).tab();

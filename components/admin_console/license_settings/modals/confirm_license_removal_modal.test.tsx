@@ -4,13 +4,11 @@
 import React from 'react';
 
 import {Provider} from 'react-redux';
-import configureStore from 'redux-mock-store';
-
-import thunk from 'redux-thunk';
 
 import {shallow} from 'enzyme';
 
 import {mountWithIntl} from 'tests/helpers/intl-test-helper';
+import mockStore from 'tests/test_store';
 
 import ConfirmLicenseRemovalModal from './confirm_license_removal_modal';
 
@@ -39,11 +37,11 @@ describe('components/admin_console/license_settings/modals/confirm_license_remov
     const mockOnExited = jest.fn();
 
     const props = {
+        currentLicenseSKU: 'Professional',
         onExited: mockOnExited,
         handleRemove: mockHandleRemove,
     };
 
-    const mockStore = configureStore([thunk]);
     const store = mockStore(state);
 
     test('should match snapshot', () => {
@@ -84,7 +82,6 @@ describe('components/admin_console/license_settings/modals/confirm_license_remov
             },
         };
         const localStore = {...state, views: ConfirmLicenseRemovalModalHidden};
-        const mockStore = configureStore([thunk]);
         const store = mockStore(localStore);
         const wrapper = mountWithIntl(
             <Provider store={store}>
@@ -92,5 +89,15 @@ describe('components/admin_console/license_settings/modals/confirm_license_remov
             </Provider>,
         );
         expect(wrapper.find('ConfirmLicenseRemovalModal').find('div.alert-svg')).toHaveLength(0);
+    });
+
+    test('should show which SKU is currently being removed in confirmation message', () => {
+        const wrapper = mountWithIntl(
+            <Provider store={store}>
+                <ConfirmLicenseRemovalModal {...props}/>
+            </Provider>,
+        );
+
+        expect(wrapper.find('ConfirmLicenseRemovalModal').find('div.subtitle').find('span').text()).toEqual('Removing the license will downgrade your server from Professional to Free. You may lose information. ');
     });
 });

@@ -4,12 +4,7 @@
 import React from 'react';
 import {screen, fireEvent} from '@testing-library/react';
 
-import configureStore from 'redux-mock-store';
-import thunk from 'redux-thunk';
 import {Provider} from 'react-redux';
-
-import {UserProfile, UsersState} from '@mattermost/types/users';
-import {GlobalState} from '@mattermost/types/store';
 
 import {getPreferenceKey} from 'mattermost-redux/utils/preference_utils';
 import {Preferences} from 'mattermost-redux/constants';
@@ -20,8 +15,12 @@ import * as useOpenCloudPurchaseModal from 'components/common/hooks/useOpenCloud
 import * as useOpenPricingModal from 'components/common/hooks/useOpenPricingModal';
 import * as useSaveBool from 'components/common/hooks/useSavePreferences';
 import {renderWithIntl} from 'tests/react_testing_utils';
+import mockStore from 'tests/test_store';
 
 import {CloudProducts} from 'utils/constants';
+
+import {GlobalState} from '@mattermost/types/store';
+import {UserProfile, UsersState} from '@mattermost/types/users';
 
 import LimitReachedBanner from './limit_reached_banner';
 
@@ -40,15 +39,16 @@ const state: GlobalState = {
                 [upgradeCloudKey]: {value: 'false'},
             },
         },
-        general: {
-            config: {
-                FeatureFlagCloudFree: 'true',
-            } as GlobalState['entities']['general']['config'],
-        },
         cloud: {
             limits: {
             },
             products: {
+            },
+        },
+        general: {
+            license: {
+            },
+            config: {
             },
         },
     },
@@ -63,10 +63,10 @@ const base = {
     product_family: '',
     billing_scheme: '',
     recurring_interval: '',
+    cross_sells_to: '',
 };
 
-const starter = {...base, sku: CloudProducts.STARTER};
-const professional = {...base, sku: CloudProducts.PROFESSIONAL};
+const free = {...base, sku: CloudProducts.STARTER};
 const enterprise = {...base, sku: CloudProducts.ENTERPRISE};
 
 const noLimitReached = {
@@ -100,7 +100,7 @@ const someLimitReached = {
     },
 };
 
-const titleStarter = /Upgrade to one of our paid plans to avoid/;
+const titleFree = /Upgrade to one of our paid plans to avoid/;
 const titleProfessional = /Upgrade to Enterprise to avoid Professional plan/;
 
 function makeSpies() {
@@ -120,13 +120,12 @@ function makeSpies() {
 
 describe('limits_reached_banner', () => {
     test('does not render when product is enterprise', () => {
-        const mockStore = configureStore([thunk]);
         const store = mockStore(state);
         const spies = makeSpies();
         spies.useGetUsageDeltas.mockReturnValue(someLimitReached);
 
         renderWithIntl(<Provider store={store}><LimitReachedBanner product={enterprise}/></Provider>);
-        expect(screen.queryByText(titleStarter)).not.toBeInTheDocument();
+        expect(screen.queryByText(titleFree)).not.toBeInTheDocument();
         expect(screen.queryByText(titleProfessional)).not.toBeInTheDocument();
     });
 
@@ -144,64 +143,46 @@ describe('limits_reached_banner', () => {
                 },
             },
         };
-        const mockStore = configureStore([thunk]);
         const store = mockStore(myState);
         const spies = makeSpies();
         spies.useGetUsageDeltas.mockReturnValue(someLimitReached);
         renderWithIntl(<Provider store={store}><LimitReachedBanner product={enterprise}/></Provider>);
-        expect(screen.queryByText(titleStarter)).not.toBeInTheDocument();
+        expect(screen.queryByText(titleFree)).not.toBeInTheDocument();
         expect(screen.queryByText(titleProfessional)).not.toBeInTheDocument();
     });
 
     test('does not render when no limit reached', () => {
-        const mockStore = configureStore([thunk]);
         const store = mockStore(state);
         const spies = makeSpies();
         spies.useGetUsageDeltas.mockReturnValue(noLimitReached);
-        renderWithIntl(<Provider store={store}><LimitReachedBanner product={starter}/></Provider>);
-        expect(screen.queryByText(titleStarter)).not.toBeInTheDocument();
+        renderWithIntl(<Provider store={store}><LimitReachedBanner product={free}/></Provider>);
+        expect(screen.queryByText(titleFree)).not.toBeInTheDocument();
         expect(screen.queryByText(titleProfessional)).not.toBeInTheDocument();
     });
 
-    test('renders starter banner', () => {
-        const mockStore = configureStore([thunk]);
+    test('renders free banner', () => {
         const store = mockStore(state);
         const spies = makeSpies();
         const mockOpenPricingModal = jest.fn();
         spies.useOpenPricingModal.mockReturnValue(mockOpenPricingModal);
         spies.useGetUsageDeltas.mockReturnValue(someLimitReached);
-        renderWithIntl(<Provider store={store}><LimitReachedBanner product={starter}/></Provider>);
-        screen.getByText(titleStarter);
+        renderWithIntl(<Provider store={store}><LimitReachedBanner product={free}/></Provider>);
+        screen.getByText(titleFree);
         expect(screen.queryByText(titleProfessional)).not.toBeInTheDocument();
         fireEvent.click(screen.getByText('View plans'));
         expect(mockOpenPricingModal).toHaveBeenCalled();
     });
 
     test('clicking Contact Sales opens sales link', () => {
-        const mockStore = configureStore([thunk]);
         const store = mockStore(state);
         const spies = makeSpies();
         const mockOpenSalesLink = jest.fn();
         spies.useOpenSalesLink.mockReturnValue(mockOpenSalesLink);
         spies.useGetUsageDeltas.mockReturnValue(someLimitReached);
-        renderWithIntl(<Provider store={store}><LimitReachedBanner product={starter}/></Provider>);
-        screen.getByText(titleStarter);
+        renderWithIntl(<Provider store={store}><LimitReachedBanner product={free}/></Provider>);
+        screen.getByText(titleFree);
         expect(screen.queryByText(titleProfessional)).not.toBeInTheDocument();
         fireEvent.click(screen.getByText('Contact sales'));
         expect(mockOpenSalesLink).toHaveBeenCalled();
-    });
-
-    test('renders professional banner', () => {
-        const mockStore = configureStore([thunk]);
-        const store = mockStore(state);
-        const spies = makeSpies();
-        const mockOpenPurchaseModal = jest.fn();
-        spies.useOpenCloudPurchaseModal.mockReturnValue(mockOpenPurchaseModal);
-        spies.useGetUsageDeltas.mockReturnValue(someLimitReached);
-        renderWithIntl(<Provider store={store}><LimitReachedBanner product={professional}/></Provider>);
-        screen.getByText(titleProfessional);
-        expect(screen.queryByText(titleStarter)).not.toBeInTheDocument();
-        fireEvent.click(screen.getByText('Upgrade'));
-        expect(mockOpenPurchaseModal).toHaveBeenCalled();
     });
 });

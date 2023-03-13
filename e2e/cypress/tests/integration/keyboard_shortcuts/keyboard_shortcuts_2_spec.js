@@ -41,7 +41,7 @@ describe('Keyboard Shortcuts', () => {
 
     it('MM-T1239 - CTRL+/ and CMD+/ and /shortcuts', () => {
         // # Type CTRL/CMD+/
-        cy.get('#post_textbox').cmdOrCtrlShortcut('/');
+        cy.uiGetPostTextBox().cmdOrCtrlShortcut('/');
 
         // # Verify that the 'Keyboard Shortcuts' modal is open
         modalShouldOpen();
@@ -49,14 +49,13 @@ describe('Keyboard Shortcuts', () => {
         // # Verify that the 'Keyboard Shortcuts' modal displays the CTRL/CMD+U shortcut
         cy.get('.section').eq(2).within(() => {
             cy.findByText('Files').should('be.visible');
-            cy.get('.shortcut-line').within(() => {
-                if (isMac()) {
-                    cy.findByText('⌘').should('be.visible');
-                } else {
-                    cy.findByText('Ctrl').should('be.visible');
-                }
-                cy.findByText('U').should('be.visible');
-            });
+            cy.get('.shortcut-line').should('be.visible').as('shortcutLine');
+            if (isMac()) {
+                cy.get('@shortcutLine').findByText('⌘').should('be.visible');
+            } else {
+                cy.get('@shortcutLine').findByText('Ctrl').should('be.visible');
+            }
+            cy.get('@shortcutLine').findByText('U').should('be.visible');
         });
 
         // # Type CTRL/CMD+/ to close the 'Keyboard Shortcuts' modal
@@ -64,7 +63,7 @@ describe('Keyboard Shortcuts', () => {
         cy.get('#shortcutsModalLabel').should('not.exist');
 
         // # Type /shortcuts
-        cy.get('#post_textbox').clear().type('/shortcuts{enter}');
+        cy.uiGetPostTextBox().clear().type('/shortcuts{enter}');
         modalShouldOpen();
 
         // # Close the 'Keyboard Shortcuts' modal using the x button
@@ -72,7 +71,7 @@ describe('Keyboard Shortcuts', () => {
         cy.get('#shortcutsModalLabel').should('not.exist');
 
         // # Type /shortcuts
-        cy.get('#post_textbox').clear().type('/shortcuts{enter}');
+        cy.uiGetPostTextBox().clear().type('/shortcuts{enter}');
 
         // # Close the 'Keyboard Shortcuts' modal by pressing ESC key
         cy.get('body').type('{esc}');
@@ -92,25 +91,25 @@ describe('Keyboard Shortcuts', () => {
 
         for (let index = 0; index < count; index++) {
             // # Type CTRL/CMD+UP
-            cy.get('#post_textbox').cmdOrCtrlShortcut('{uparrow}');
+            cy.uiGetPostTextBox().cmdOrCtrlShortcut('{uparrow}');
 
             // # Verify that the previous message is displayed
             message = messagePrefix + (4 - index);
-            cy.get('#post_textbox').contains(message);
+            cy.uiGetPostTextBox().contains(message);
         }
 
         // # One extra CTRL/CMD+UP does not change the displayed message
-        cy.get('#post_textbox').cmdOrCtrlShortcut('{uparrow}');
+        cy.uiGetPostTextBox().cmdOrCtrlShortcut('{uparrow}');
         message = messagePrefix + '0';
-        cy.get('#post_textbox').contains(message);
+        cy.uiGetPostTextBox().contains(message);
 
         for (let index = 1; index < count; index++) {
             // # Type CTRL/CMD+DOWN
-            cy.get('#post_textbox').cmdOrCtrlShortcut('{downarrow}');
+            cy.uiGetPostTextBox().cmdOrCtrlShortcut('{downarrow}');
 
             // # Verify that the next message is displayed
             message = messagePrefix + index;
-            cy.get('#post_textbox').contains(message);
+            cy.uiGetPostTextBox().contains(message);
         }
     });
 
@@ -119,11 +118,11 @@ describe('Keyboard Shortcuts', () => {
         const editMessage = 'Edit Test';
 
         // # Post message text
-        cy.get('#post_textbox').clear().type(message).type('{enter}').wait(TIMEOUTS.HALF_SEC);
+        cy.uiGetPostTextBox().clear().type(message).type('{enter}').wait(TIMEOUTS.HALF_SEC);
 
         // # Edit previous post
         cy.getLastPostId().then(() => {
-            cy.get('#post_textbox').type('{uparrow}');
+            cy.uiGetPostTextBox().type('{uparrow}');
 
             // * Edit Post Input should appear
             cy.get('#edit_textbox').should('be.visible');
@@ -144,25 +143,23 @@ describe('Keyboard Shortcuts', () => {
         const userName = `${testUser.username}`;
 
         // # Enter the first characters of a user name
-        cy.get('#post_textbox').should('be.visible').clear().type('@' + userName.substring(0, 5)).wait(TIMEOUTS.HALF_SEC);
+        cy.uiGetPostTextBox().clear().type('@' + userName.substring(0, 5)).wait(TIMEOUTS.HALF_SEC);
 
         // # Select the focused on user from the list using TAB
-        cy.get('#suggestionList').should('be.visible').within(() => {
-            cy.focused().tab();
-        });
+        cy.get('#suggestionList').should('be.visible').focused().tab();
 
         // # Verify that the correct user name has been selected
-        cy.get('#post_textbox').should('be.visible').should('contain', userName);
+        cy.uiGetPostTextBox().should('contain', userName);
 
         // # Clear the message box
-        cy.get('#post_textbox').clear();
+        cy.uiGetPostTextBox().clear();
     });
 
     it('MM-T1274 - :[character]+TAB', () => {
         const emojiName = ':tomato';
 
         // # Enter the first characters of an emoji name
-        cy.get('#post_textbox').should('be.visible').clear().type(emojiName.substring(0, 3)).wait(TIMEOUTS.HALF_SEC);
+        cy.uiGetPostTextBox().clear().type(emojiName.substring(0, 3)).wait(TIMEOUTS.HALF_SEC);
 
         // # Go down the list of emojis
         cy.get('body').type('{downarrow}').wait(TIMEOUTS.HALF_SEC);
@@ -171,12 +168,10 @@ describe('Keyboard Shortcuts', () => {
         cy.get('body').type('{downarrow}').wait(TIMEOUTS.HALF_SEC);
 
         // # Select the fourth emoji from the top using TAB
-        cy.get('#suggestionList').should('be.visible').within(() => {
-            cy.focused().tab();
-        });
+        cy.get('#suggestionList').should('be.visible').focused().tab();
 
         // # Verify that the correct selection has been made
-        cy.get('#post_textbox').should('be.visible').should('contain', emojiName);
+        cy.uiGetPostTextBox().should('contain', emojiName);
     });
 
     it('MM-T1275 - SHIFT+UP', () => {
@@ -186,10 +181,10 @@ describe('Keyboard Shortcuts', () => {
         cy.postMessage(message);
 
         // # Press SHIFT+UP
-        cy.get('#post_textbox').type('{shift}{uparrow}');
+        cy.uiGetPostTextBox().type('{shift}{uparrow}');
 
         // # Verify that the RHS reply box is focused
-        cy.get('#reply_textbox').should('be.focused');
+        cy.uiGetReplyTextBox().should('be.focused');
 
         // * Verify that the recently posted message is shown in the RHS
         cy.getLastPostId().then((postId) => {
@@ -206,6 +201,6 @@ describe('Keyboard Shortcuts', () => {
 });
 
 function modalShouldOpen() {
-    const name = isMac() ? /Keyboard Shortcuts ⌘ \// : /Keyboard Shortcuts Ctrl \//;
+    const name = isMac() ? /Keyboard shortcuts ⌘ \// : /Keyboard shortcuts Ctrl \//;
     cy.findByRole('dialog', {name}).should('be.visible');
 }

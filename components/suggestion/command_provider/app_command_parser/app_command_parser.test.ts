@@ -1,11 +1,9 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-/* eslint-disable max-lines */
+import mockStore from 'tests/test_store';
 
 import {
-    thunk,
-    configureStore,
     Client4,
     AppBinding,
     checkForExecuteSuggestion,
@@ -26,8 +24,6 @@ import {
     reduxTestState,
     testBindings,
 } from './tests/app_command_parser_test_data';
-
-const mockStore = configureStore([thunk]);
 
 const getOpenInModalOption = (command: string) => {
     return {
@@ -519,6 +515,7 @@ describe('AppCommandParser', () => {
                     Hint: 'Issue hint',
                     IconData: 'Issue icon',
                     Description: 'Interact with Jira issues',
+                    type: 'commands',
                 },
             ]);
         });
@@ -532,6 +529,7 @@ describe('AppCommandParser', () => {
                     Hint: 'Issue hint',
                     IconData: 'Issue icon',
                     Description: 'Interact with Jira issues',
+                    type: 'commands',
                 },
             ]);
         });
@@ -545,6 +543,7 @@ describe('AppCommandParser', () => {
                     Hint: 'Issue hint',
                     IconData: 'Issue icon',
                     Description: 'Interact with Jira issues',
+                    type: 'commands',
                 },
             ]);
         });
@@ -558,6 +557,7 @@ describe('AppCommandParser', () => {
                     Hint: 'Issue hint',
                     IconData: 'Issue icon',
                     Description: 'Interact with Jira issues',
+                    type: 'commands',
                 },
             ]);
         });
@@ -571,6 +571,7 @@ describe('AppCommandParser', () => {
                     Hint: '',
                     IconData: '',
                     Description: 'View details of a Jira issue',
+                    type: 'commands',
                 },
                 {
                     Suggestion: 'create',
@@ -578,6 +579,7 @@ describe('AppCommandParser', () => {
                     Hint: 'Create hint',
                     IconData: 'Create icon',
                     Description: 'Create a new Jira issue',
+                    type: 'commands',
                 },
                 {
                     Suggestion: 'rest',
@@ -585,6 +587,7 @@ describe('AppCommandParser', () => {
                     Hint: 'rest hint',
                     IconData: 'rest icon',
                     Description: 'rest description',
+                    type: 'commands',
                 },
             ]);
         });
@@ -598,6 +601,7 @@ describe('AppCommandParser', () => {
                     Hint: '',
                     IconData: '',
                     Description: 'View details of a Jira issue',
+                    type: 'commands',
                 },
                 {
                     Suggestion: 'create',
@@ -605,6 +609,7 @@ describe('AppCommandParser', () => {
                     Hint: 'Create hint',
                     IconData: 'Create icon',
                     Description: 'Create a new Jira issue',
+                    type: 'commands',
                 },
                 {
                     Suggestion: 'rest',
@@ -612,6 +617,7 @@ describe('AppCommandParser', () => {
                     Hint: 'rest hint',
                     IconData: 'rest icon',
                     Description: 'rest description',
+                    type: 'commands',
                 },
 
             ]);
@@ -626,6 +632,7 @@ describe('AppCommandParser', () => {
                     Hint: 'Create hint',
                     IconData: 'Create icon',
                     Description: 'Create a new Jira issue',
+                    type: 'commands',
                 },
             ]);
         });
@@ -639,6 +646,7 @@ describe('AppCommandParser', () => {
                     Hint: 'Create hint',
                     IconData: 'Create icon',
                     Description: 'Create a new Jira issue',
+                    type: 'commands',
                 },
             ]);
         });

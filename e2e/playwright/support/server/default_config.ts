@@ -2,36 +2,66 @@
 // See LICENSE.txt for license information.
 
 import merge from 'deepmerge';
+
 import {
     AdminConfig,
+    ExperimentalSettings,
+    FeatureFlags,
     PasswordSettings,
     ServiceSettings,
     TeamSettings,
     PluginSettings,
-} from '../../../../packages/mattermost-redux/src/types/config';
-
-import testConfig from '../../test.config';
+    ClusterSettings,
+    CollapsedThreads,
+} from '@mattermost/types/config';
+import testConfig from '@e2e-test.config';
 
 export function getOnPremServerConfig(): AdminConfig {
     return merge<AdminConfig>(defaultServerConfig, onPremServerConfig() as AdminConfig);
 }
 
 type TestAdminConfig = {
+    ClusterSettings: Partial<ClusterSettings>;
+    ExperimentalSettings: Partial<ExperimentalSettings>;
+    FeatureFlags: Partial<FeatureFlags>;
     PasswordSettings: Partial<PasswordSettings>;
+    PluginSettings: Partial<PluginSettings>;
     ServiceSettings: Partial<ServiceSettings>;
     TeamSettings: Partial<TeamSettings>;
-    PluginSettings: Partial<PluginSettings>;
 };
 
 // On-prem setting that is different from the default
 const onPremServerConfig = (): Partial<TestAdminConfig> => {
     return {
+        ClusterSettings: {
+            Enable: testConfig.haClusterEnabled,
+            ClusterName: testConfig.haClusterName,
+        },
+        ExperimentalSettings: {
+            EnableAppBar: true,
+        },
+        FeatureFlags: {
+            BoardsProduct: testConfig.boardsProductEnabled,
+        },
         PasswordSettings: {
             MinimumLength: 5,
             Lowercase: false,
             Number: false,
             Uppercase: false,
             Symbol: false,
+        },
+        PluginSettings: {
+            EnableUploads: true,
+            Plugins: {
+                'com.mattermost.calls': {
+                    defaultenabled: true,
+                },
+            },
+            PluginStates: {
+                focalboard: {
+                    Enable: !testConfig.boardsProductEnabled,
+                },
+            },
         },
         ServiceSettings: {
             SiteURL: testConfig.baseURL,
@@ -40,14 +70,11 @@ const onPremServerConfig = (): Partial<TestAdminConfig> => {
         TeamSettings: {
             EnableOpenServer: true,
         },
-        PluginSettings: {
-            EnableUploads: true,
-        },
     };
 };
 
 // Should be based only from the generated default config from mattermost-server via "make config-reset"
-// Based on v6.5 server
+// Based on v7.9 server
 const defaultServerConfig: AdminConfig = {
     ServiceSettings: {
         SiteURL: '',
@@ -70,7 +97,7 @@ const defaultServerConfig: AdminConfig = {
         IdleTimeout: 60,
         MaximumLoginAttempts: 10,
         GoroutineHealthThreshold: -1,
-        EnableOAuthServiceProvider: false,
+        EnableOAuthServiceProvider: true,
         EnableIncomingWebhooks: true,
         EnableOutgoingWebhooks: true,
         EnableCommands: true,
@@ -97,8 +124,11 @@ const defaultServerConfig: AdminConfig = {
         CorsDebug: false,
         AllowCookiesForSubdomains: false,
         ExtendSessionLengthWithActivity: true,
+        SessionLengthWebInDays: 30,
         SessionLengthWebInHours: 720,
+        SessionLengthMobileInDays: 30,
         SessionLengthMobileInHours: 720,
+        SessionLengthSSOInDays: 30,
         SessionLengthSSOInHours: 720,
         SessionCacheInMinutes: 10,
         SessionIdleTimeoutInMinutes: 43200,
@@ -126,6 +156,7 @@ const defaultServerConfig: AdminConfig = {
         ExperimentalEnableDefaultChannelLeaveJoinMessages: true,
         ExperimentalGroupUnreadChannels: 'disabled',
         EnableAPITeamDeletion: false,
+        EnableAPITriggerAdminNotifications: false,
         EnableAPIUserDeletion: false,
         ExperimentalEnableHardenedMode: false,
         ExperimentalStrictCSRFEnforcement: false,
@@ -135,6 +166,7 @@ const defaultServerConfig: AdminConfig = {
         EnableSVGs: false,
         EnableLatex: false,
         EnableInlineLatex: true,
+        PostPriority: true,
         EnableAPIChannelDeletion: false,
         EnableLocalMode: false,
         LocalModeSocketLocation: '/var/tmp/mattermost_local.socket',
@@ -142,10 +174,13 @@ const defaultServerConfig: AdminConfig = {
         SplitKey: '',
         FeatureFlagSyncIntervalSeconds: 30,
         DebugSplit: false,
-        ThreadAutoFollow: false,
-        CollapsedThreads: 'disabled',
+        ThreadAutoFollow: true,
+        CollapsedThreads: CollapsedThreads.ALWAYS_ON,
         ManagedResourcePaths: '',
         EnableCustomGroups: true,
+        SelfHostedPurchase: true,
+        AllowSyncedDrafts: true,
+        SelfHostedExpansion: false,
     },
     TeamSettings: {
         SiteName: 'Mattermost',
@@ -159,6 +194,7 @@ const defaultServerConfig: AdminConfig = {
         CustomBrandText: '',
         CustomDescriptionText: '',
         RestrictDirectMessage: 'any',
+        EnableLastActiveTime: true,
         UserStatusAwayTimeout: 300,
         MaxChannelsPerTeam: 2000,
         MaxNotificationsPerChannel: 1000,
@@ -204,6 +240,7 @@ const defaultServerConfig: AdminConfig = {
         FileLocation: '',
         EnableWebhookDebugging: true,
         EnableDiagnostics: true,
+        VerboseDiagnostics: false,
         EnableSentry: true,
         AdvancedLoggingConfig: '',
     },
@@ -229,11 +266,11 @@ const defaultServerConfig: AdminConfig = {
         AdvancedLoggingConfig: '',
     },
     PasswordSettings: {
-        MinimumLength: 10,
-        Lowercase: true,
-        Number: true,
-        Uppercase: true,
-        Symbol: true,
+        MinimumLength: 8,
+        Lowercase: false,
+        Number: false,
+        Uppercase: false,
+        Symbol: false,
     },
     FileSettings: {
         EnableFileAttachments: true,
@@ -241,6 +278,7 @@ const defaultServerConfig: AdminConfig = {
         EnableMobileDownload: true,
         MaxFileSize: 104857600,
         MaxImageResolution: 33177600,
+        MaxImageDecoderConcurrency: -1,
         DriverName: 'local',
         Directory: './data/',
         EnablePublicLink: false,
@@ -258,6 +296,7 @@ const defaultServerConfig: AdminConfig = {
         AmazonS3SignV2: false,
         AmazonS3SSE: false,
         AmazonS3Trace: false,
+        AmazonS3RequestTimeoutMilliseconds: 30000,
     },
     EmailSettings: {
         EnableSignUpWithEmail: true,
@@ -290,6 +329,7 @@ const defaultServerConfig: AdminConfig = {
         LoginButtonColor: '#0000',
         LoginButtonBorderColor: '#2389D7',
         LoginButtonTextColor: '#2389D7',
+        EnableInactivityEmail: true,
     },
     RateLimitSettings: {
         Enable: false,
@@ -307,9 +347,9 @@ const defaultServerConfig: AdminConfig = {
     SupportSettings: {
         TermsOfServiceLink: 'https://mattermost.com/terms-of-use/',
         PrivacyPolicyLink: 'https://mattermost.com/privacy-policy/',
-        AboutLink: 'https://about.mattermost.com/default-about/',
-        HelpLink: 'https://about.mattermost.com/default-help/',
-        ReportAProblemLink: 'https://about.mattermost.com/default-report-a-problem/',
+        AboutLink: 'https://docs.mattermost.com/about/product.html/',
+        HelpLink: 'https://mattermost.com/default-help/',
+        ReportAProblemLink: 'https://mattermost.com/default-report-a-problem/',
         SupportEmail: '',
         CustomTermsOfServiceEnabled: false,
         CustomTermsOfServiceReAcceptancePeriod: 365,
@@ -468,8 +508,8 @@ const defaultServerConfig: AdminConfig = {
     NativeAppSettings: {
         AppCustomURLSchemes: ['mmauth://', 'mmauthbeta://'],
         AppDownloadLink: 'https://mattermost.com/download/#mattermostApps',
-        AndroidAppDownloadLink: 'https://about.mattermost.com/mattermost-android-app/',
-        IosAppDownloadLink: 'https://about.mattermost.com/mattermost-ios-app/',
+        AndroidAppDownloadLink: 'https://mattermost.com/mattermost-android-app/',
+        IosAppDownloadLink: 'https://mattermost.com/mattermost-ios-app/',
     },
     ClusterSettings: {
         Enable: false,
@@ -499,10 +539,10 @@ const defaultServerConfig: AdminConfig = {
         LinkMetadataTimeoutMilliseconds: 5000,
         RestrictSystemAdmin: false,
         UseNewSAMLLibrary: false,
-        CloudUserLimit: 0,
-        CloudBilling: false,
         EnableSharedChannels: false,
         EnableRemoteClusterService: false,
+        EnableAppBar: false,
+        PatchPluginsReactDOM: false,
     },
     AnalyticsSettings: {
         MaxUsersForStatistics: 2500,
@@ -525,9 +565,12 @@ const defaultServerConfig: AdminConfig = {
         PostsAggregatorJobStartTime: '03:00',
         IndexPrefix: '',
         LiveIndexingBatchSize: 1,
-        BulkIndexingTimeWindowSeconds: 3600,
+        BatchSize: 10000,
         RequestTimeoutSeconds: 30,
         SkipTLSVerification: false,
+        CA: '',
+        ClientCert: '',
+        ClientKey: '',
         Trace: '',
     },
     BleveSettings: {
@@ -535,7 +578,7 @@ const defaultServerConfig: AdminConfig = {
         EnableIndexing: false,
         EnableSearching: false,
         EnableAutocomplete: false,
-        BulkIndexingTimeWindowSeconds: 3600,
+        BatchSize: 10000,
     },
     DataRetentionSettings: {
         EnableMessageDeletion: false,
@@ -566,6 +609,10 @@ const defaultServerConfig: AdminConfig = {
         RunJobs: true,
         RunScheduler: true,
         CleanupJobsThresholdDays: -1,
+        CleanupConfigThresholdDays: -1,
+    },
+    ProductSettings: {
+        EnablePublicSharedBoards: false,
     },
     PluginSettings: {
         Enable: true,
@@ -576,11 +623,17 @@ const defaultServerConfig: AdminConfig = {
         ClientDirectory: './client/plugins',
         Plugins: {},
         PluginStates: {
+            'com.mattermost.apps': {
+                Enable: true,
+            },
+            'com.mattermost.calls': {
+                Enable: true,
+            },
             'com.mattermost.nps': {
                 Enable: true,
             },
             focalboard: {
-                Enable: true,
+                Enable: false,
             },
             playbooks: {
                 Enable: true,
@@ -617,30 +670,34 @@ const defaultServerConfig: AdminConfig = {
     FeatureFlags: {
         TestFeature: 'off',
         TestBoolFeature: false,
-        CloudDelinquentEmailJobsEnabled: false,
-        CollapsedThreads: true,
         EnableRemoteClusterService: false,
-        AppsEnabled: false,
-        AppBarEnabled: false,
+        AppsEnabled: true,
         PluginPlaybooks: '',
         PluginApps: '',
         PluginFocalboard: '',
+        PluginCalls: '',
         PermalinkPreviews: true,
-        GlobalHeader: true,
-        NewAccountNoisy: false,
-        CallsMobile: false,
+        CallsEnabled: true,
         BoardsFeatureFlags: '',
-        AddMembersToChannel: 'top',
-        GuidedChannelCreation: false,
-        ResendInviteEmailInterval: '',
-        InviteToTeam: 'none',
-        CustomGroups: true,
-        InlinePostEditing: false,
         BoardsDataRetention: false,
         NormalizeLdapDNs: false,
-        UseCaseOnboarding: false,
-        WorkspaceOptimizationDashboard: false,
+        EnableInactivityCheckJob: true,
+        UseCaseOnboarding: true,
         GraphQL: false,
+        InsightsEnabled: true,
+        CommandPalette: false,
+        BoardsProduct: true,
+        SendWelcomePost: true,
+        WorkTemplate: false,
+        PostPriority: true,
+        WysiwygEditor: false,
+        PeopleProduct: false,
+        AnnualSubscription: false,
+        ReduceOnBoardingTaskList: false,
+        OnboardingAutoShowLinkedBoard: true,
+        ThreadsEverywhere: false,
+        GlobalDrafts: true,
+        OnboardingTourTips: true,
     },
     ImportSettings: {
         Directory: './import',

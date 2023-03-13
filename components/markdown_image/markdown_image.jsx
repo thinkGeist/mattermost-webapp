@@ -12,6 +12,7 @@ import SizeAwareImage from 'components/size_aware_image';
 import FilePreviewModal from 'components/file_preview_modal';
 
 import brokenImageIcon from 'images/icons/brokenimage.png';
+import ExternalLink from 'components/external_link';
 
 export default class MarkdownImage extends React.PureComponent {
     static defaultProps = {
@@ -38,6 +39,7 @@ export default class MarkdownImage extends React.PureComponent {
         actions: PropTypes.shape({
             openModal: PropTypes.func,
         }).isRequired,
+        hideUtilities: PropTypes.bool,
     }
 
     constructor(props) {
@@ -151,15 +153,14 @@ export default class MarkdownImage extends React.PureComponent {
                 {(safeSrc) => {
                     if (!safeSrc) {
                         return (
-                            <a
+                            <ExternalLink
                                 className='theme markdown__link'
                                 href={src}
-                                rel='noopener noreferrer'
-                                target='_blank'
                                 title={this.props.title}
+                                location='markdown_image'
                             >
                                 {alt}
-                            </a>
+                            </ExternalLink>
                         );
                     }
 
@@ -178,6 +179,7 @@ export default class MarkdownImage extends React.PureComponent {
                     }
 
                     const {height, width, title, postId, onImageHeightChanged} = this.props;
+                    const hideUtilities = this.isHeaderChangeMessage() || this.props.hideUtilities;
 
                     let imageElement = (
                         <SizeAwareImage
@@ -190,6 +192,7 @@ export default class MarkdownImage extends React.PureComponent {
                             dimensions={imageMetadata}
                             showLoader={false}
                             onClick={this.showModal}
+                            hideUtilities={hideUtilities}
                             onImageLoadFail={this.handleLoadFail}
                             onImageLoaded={this.handleImageLoaded}
                         />

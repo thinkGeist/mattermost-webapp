@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {Dispatch} from 'redux';
 
 import Permissions from 'mattermost-redux/constants/permissions';
 import {Emoji} from '@mattermost/types/emojis';
@@ -19,14 +18,13 @@ type Props = {
     channelId?: string;
     postId: string;
     teamId: string;
-    getDotMenuRef: () => HTMLDivElement | null;
-    location: LocationTypes;
+    location?: LocationTypes;
     locale: string;
     emojis: Emoji[];
     size: number;
     defaultEmojis: Emoji[];
     actions: {
-        addReaction: (postId: string, emojiName: string) => (dispatch: Dispatch) => void;
+        addReaction: (postId: string, emojiName: string) => void;
     };
 }
 
@@ -106,7 +104,6 @@ export default class PostRecentReactions extends React.PureComponent<Props, Stat
                     <div>
                         <React.Fragment>
                             <EmojiItem
-                                // eslint-disable-next-line react/no-array-index-key
                                 emoji={emoji}
                                 onItemClick={this.handleAddEmoji}
                                 order={n}
@@ -119,4 +116,3 @@ export default class PostRecentReactions extends React.PureComponent<Props, Stat
         );
     }
 }
-

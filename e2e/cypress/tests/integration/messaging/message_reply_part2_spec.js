@@ -35,10 +35,10 @@ describe('Message Reply', () => {
     it('MM-T2132 - Message sends: just text', () => {
         // # Type `Hello` in center message box
         const msg = 'Hello';
-        cy.get('#post_textbox').type(msg);
+        cy.uiGetPostTextBox().type(msg);
 
         // # Press `Enter`
-        cy.get('#post_textbox').type('{enter}');
+        cy.uiGetPostTextBox().type('{enter}');
 
         // * Message displays in center
         cy.getLastPostId().then((postId) => {
@@ -58,13 +58,13 @@ describe('Message Reply', () => {
         cy.uiGetReply().should('be.disabled');
 
         // # Type a character in the comment box
-        cy.get('#reply_textbox').type('A');
+        cy.uiGetReplyTextBox().type('A');
 
         // * Reply button is not disabled
         cy.uiGetReply().should('not.be.disabled');
 
         // # Clear comment box
-        cy.get('#reply_textbox').clear();
+        cy.uiGetReplyTextBox().clear();
 
         // # Close RHS
         cy.uiCloseRHS();
@@ -77,10 +77,10 @@ describe('Message Reply', () => {
         const msg = 'reply1';
 
         // # Type message
-        cy.get('#reply_textbox').type(msg);
+        cy.uiGetReplyTextBox().type(msg);
 
         // # Post reply
-        cy.get('#addCommentButton').click();
+        cy.uiReply();
 
         cy.getLastPostId().then((replyId) => {
             // * Message displays in center
@@ -103,15 +103,15 @@ describe('Message Reply', () => {
 
     it('MM-T2135 - Can open reply thread from reply count arrow and reply', () => {
         // # Click reply icon
-        cy.get(`#CENTER_commentIcon_${rootId}`).click().wait(TIMEOUTS.HALF_SEC);
+        cy.clickPostCommentIcon(rootId);
 
         const msg = 'reply2';
 
         // # Type message
-        cy.get('#reply_textbox').type(msg);
+        cy.uiGetReplyTextBox().type(msg);
 
         // # Press `Enter`
-        cy.get('#reply_textbox').type('{enter}');
+        cy.uiGetReplyTextBox().type('{enter}');
 
         cy.getLastPostId().then((replyId) => {
             // * Message displays in center
@@ -139,10 +139,10 @@ describe('Message Reply', () => {
         const msg = 'reply3';
 
         // # Type message
-        cy.get('#reply_textbox').type(msg);
+        cy.uiGetReplyTextBox().type(msg);
 
         // # Post reply
-        cy.get('#addCommentButton').click().wait(TIMEOUTS.HALF_SEC);
+        cy.uiReply().wait(TIMEOUTS.HALF_SEC);
 
         // * Center channel has not changed
         cy.get('#channelHeaderTitle').should('contain', otherChannel.display_name);

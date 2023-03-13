@@ -8,10 +8,10 @@ import {mountWithIntl} from 'tests/helpers/intl-test-helper';
 
 import deepFreeze from 'mattermost-redux/utils/deep_freeze';
 
+import GuestTag from 'components/widgets/tag/guest_tag';
+import BotTag from 'components/widgets/tag/bot_tag';
 import EmailIcon from 'components/widgets/icons/mail_icon';
 import AlertIcon from 'components/widgets/icons/alert_icon';
-import GuestBadge from 'components/widgets/badges/guest_badge';
-import BotBadge from 'components/widgets/badges/bot_badge';
 import Avatar from 'components/widgets/users/avatar';
 
 import ResultTable, {Props} from './result_table';
@@ -28,7 +28,6 @@ const defaultUser = deepFreeze({
     delete_at: 1,
     username: 'username',
     password: 'password',
-    auth_data: 'auth_data',
     auth_service: 'auth_service',
     email: 'aa@aa.aa',
     email_verified: true,
@@ -37,7 +36,6 @@ const defaultUser = deepFreeze({
     last_name: 'last_name',
     position: 'position',
     roles: 'user',
-    allow_marketing: true,
     props: {},
     notify_props: {
         desktop: 'default',
@@ -53,14 +51,11 @@ const defaultUser = deepFreeze({
     },
     last_password_update: 1,
     last_picture_update: 1,
-    failed_attempts: 1,
     locale: 'en',
     mfa_active: false,
-    mfa_secret: '',
     last_activity_at: 1,
     is_bot: false,
     bot_description: '',
-    bot_last_icon_update: 1,
     terms_of_service_id: '',
     terms_of_service_create_at: 1,
 },
@@ -99,8 +94,8 @@ describe('ResultTable', () => {
         }];
         const wrapper = shallow(<ResultTable {...props}/>);
         expect(wrapper.find(Avatar).length).toBe(1);
-        expect(wrapper.find(BotBadge).length).toBe(0);
-        expect(wrapper.find(GuestBadge).length).toBe(0);
+        expect(wrapper.find(BotTag).length).toBe(0);
+        expect(wrapper.find(GuestTag).length).toBe(0);
     });
 
     test('bots render as bots', () => {
@@ -113,8 +108,8 @@ describe('ResultTable', () => {
         }];
         const wrapper = shallow(<ResultTable {...props}/>);
         expect(wrapper.find(Avatar).length).toBe(1);
-        expect(wrapper.find(BotBadge).length).toBe(1);
-        expect(wrapper.find(GuestBadge).length).toBe(0);
+        expect(wrapper.find(BotTag).length).toBe(1);
+        expect(wrapper.find(GuestTag).length).toBe(0);
     });
 
     test('guests render as guests', () => {
@@ -127,8 +122,8 @@ describe('ResultTable', () => {
         }];
         const wrapper = shallow(<ResultTable {...props}/>);
         expect(wrapper.find(Avatar).length).toBe(1);
-        expect(wrapper.find(BotBadge).length).toBe(0);
-        expect(wrapper.find(GuestBadge).length).toBe(1);
+        expect(wrapper.find(BotTag).length).toBe(0);
+        expect(wrapper.find(GuestTag).length).toBe(1);
     });
 
     test('renders success banner when invites were sent', () => {

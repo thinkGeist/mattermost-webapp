@@ -5,10 +5,10 @@ import React from 'react';
 import {FormattedMessage} from 'react-intl';
 
 import {ProductNotices, ProductNotice} from '@mattermost/types/product_notices';
-import {WebsocketStatus} from 'mattermost-redux/types/websocket';
 
 import {trackEvent} from 'actions/telemetry_actions.jsx';
 
+import ExternalLink from 'components/external_link';
 import Markdown from 'components/markdown';
 import GenericModal from 'components/generic_modal';
 import NextIcon from 'components/widgets/icons/fa_next_icon';
@@ -17,19 +17,11 @@ import AdminEyeIcon from 'components/widgets/icons/admin_eye_icon';
 
 import {isDesktopApp, getDesktopVersion} from 'utils/user_agent';
 
+import type {PropsFromRedux} from './index';
+
 import './product_notices_modal.scss';
 
-type Props = {
-    version: string;
-    currentTeamId: string;
-    socketStatus: WebsocketStatus;
-    actions: {
-        getInProductNotices: (teamId: string, client: string, clientVersion: string) => Promise<{
-            data: ProductNotices;
-        }>;
-        updateNoticesAsViewed: (noticeIds: string[]) => Promise<Record<string, unknown>>;
-    };
-}
+type Props = PropsFromRedux;
 
 type State = {
     presentNoticeIndex: number;
@@ -62,6 +54,9 @@ export default class ProductNoticesModal extends React.PureComponent<Props, Stat
                 this.fetchNoticesData();
             }
         }
+        if (!prevProps.currentTeamId) {
+            this.fetchNoticesData();
+        }
     }
 
     public componentWillUnmount() {
@@ -70,6 +65,9 @@ export default class ProductNoticesModal extends React.PureComponent<Props, Stat
 
     private async fetchNoticesData() {
         const {version, currentTeamId} = this.props;
+        if (!currentTeamId) {
+            return;
+        }
         let client = 'web';
         let clientVersion = version;
         if (isDesktopApp()) {
@@ -198,16 +196,15 @@ export default class ProductNoticesModal extends React.PureComponent<Props, Stat
 
         if (noOfNotices !== 1 && presentNoticeInfo.actionText) {
             return (
-                <a
-                    target='_blank'
+                <ExternalLink
                     id='actionButton'
-                    rel='noopener noreferrer'
                     className='GenericModal__button actionButton'
-                    href={presentNoticeInfo.actionParam}
+                    location='product_notices_modal'
+                    href={presentNoticeInfo.actionParam || ''}
                     onClick={this.trackClickEvent}
                 >
                     {presentNoticeInfo.actionText}
-                </a>
+                </ExternalLink>
             );
         }
         return null;

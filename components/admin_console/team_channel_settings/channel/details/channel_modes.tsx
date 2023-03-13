@@ -7,8 +7,8 @@ import {FormattedMessage} from 'react-intl';
 import {t} from 'utils/i18n';
 
 import AdminPanel from 'components/widgets/admin_console/admin_panel';
-import FormattedMarkdownMessage from 'components/formatted_markdown_message.jsx';
 import LineSwitch from '../../line_switch';
+import ExternalLink from 'components/external_link';
 
 interface Props {
     isPublic: boolean;
@@ -40,9 +40,19 @@ const SyncGroupsToggle: React.SFC<Props> = (props: Props): JSX.Element => {
                 />
             )}
             subTitle={(
-                <FormattedMarkdownMessage
+                <FormattedMessage
                     id='admin.channel_settings.channel_details.syncGroupMembersDescr'
-                    defaultMessage='When enabled, adding and removing users from groups will add or remove them from this channel. The only way of inviting members to this channel is by adding the groups they belong to. [Learn More](!https://www.mattermost.com/pl/default-ldap-group-constrained-team-channel.html)'
+                    defaultMessage='When enabled, adding and removing users from groups will add or remove them from this channel. The only way of inviting members to this channel is by adding the groups they belong to. <link>Learn More</link>'
+                    values={{
+                        link: (msg: React.ReactNode) => (
+                            <ExternalLink
+                                href='https://www.mattermost.com/pl/default-ldap-group-constrained-team-channel.html'
+                                location='channel_modes'
+                            >
+                                {msg}
+                            </ExternalLink>
+                        ),
+                    }}
                 />
             )}
         />

@@ -9,8 +9,6 @@ import {RouteComponentProps} from 'react-router-dom';
 import {t} from 'utils/i18n';
 import * as Utils from 'utils/utils';
 
-import FormattedMarkdownMessage from 'components/formatted_markdown_message';
-
 import LoadingScreen from 'components/loading_screen';
 import LoadingWrapper from 'components/widgets/loading/loading_wrapper';
 
@@ -20,6 +18,10 @@ import AdminPanelWithLink from 'components/widgets/admin_console/admin_panel_wit
 import {ActionResult} from 'mattermost-redux/types/actions';
 
 import {Scheme, SchemeScope, SchemesState} from '@mattermost/types/schemes';
+
+import {LicenseSkus} from 'utils/constants';
+
+import ExternalLink from 'components/external_link';
 
 import PermissionsSchemeSummary from './permissions_scheme_summary';
 
@@ -32,6 +34,7 @@ export type Props = {
     clusterIsEnabled?: boolean;
     license: {
         CustomPermissionsSchemes: string;
+        SkuShortName: string;
     };
     actions: {
         loadSchemes: (scope: SchemeScope, page: number, perPage: number) => Promise<ActionResult>;
@@ -100,16 +103,15 @@ export default class PermissionSchemesSettings extends React.PureComponent<Props
         }
 
         const docLink = (
-            <a
+            <ExternalLink
                 href='https://docs.mattermost.com/administration/config-settings.html#jobs'
-                rel='noopener noreferrer'
-                target='_blank'
+                location='permission_scheme_settings'
             >
                 <FormattedMessage
                     id='admin.permissions.documentationLinkText'
                     defaultMessage='documentation'
                 />
-            </a>
+            </ExternalLink>
         );
 
         if (this.props.jobsAreEnabled && !this.props.clusterIsEnabled) {
@@ -152,7 +154,7 @@ export default class PermissionSchemesSettings extends React.PureComponent<Props
                 match={this.props.match}
             />
         ));
-        const hasCustomSchemes = this.props.license.CustomPermissionsSchemes === 'true';
+        const hasCustomSchemes = this.props.license.CustomPermissionsSchemes === 'true' || this.props.license.SkuShortName === LicenseSkus.Professional;
         const teamOverrideView = this.teamOverrideSchemesMigrationView();
 
         if (hasCustomSchemes) {
@@ -163,7 +165,17 @@ export default class PermissionSchemesSettings extends React.PureComponent<Props
                     titleId={t('admin.permissions.teamOverrideSchemesTitle')}
                     titleDefault='Team Override Schemes'
                     subtitleId={t('admin.permissions.teamOverrideSchemesBannerText')}
-                    subtitleDefault='Use when specific teams need permission exceptions to the [System Scheme](!https://docs.mattermost.com/onboard/advanced-permissions.html).'
+                    subtitleDefault='Use when specific teams need permission exceptions to the <link>System Scheme</link>'
+                    subtitleValues={{
+                        link: (msg: React.ReactNode) => (
+                            <ExternalLink
+                                href='https://docs.mattermost.com/onboard/advanced-permissions.html'
+                                location='permission_scheme_settings'
+                            >
+                                {msg}
+                            </ExternalLink>
+                        ),
+                    }}
                     url='/admin_console/user_management/permissions/team_override_scheme'
                     disabled={(teamOverrideView !== null) || this.props.isDisabled}
                     linkTextId={t('admin.permissions.teamOverrideSchemesNewButton')}
@@ -220,9 +232,19 @@ export default class PermissionSchemesSettings extends React.PureComponent<Props
                         <div className='banner info'>
                             <div className='banner__content'>
                                 <span>
-                                    <FormattedMarkdownMessage
+                                    <FormattedMessage
                                         id='admin.permissions.introBanner'
-                                        defaultMessage='Permission Schemes set the default permissions for Team Admins, Channel Admins and everyone else. Learn more about permission schemes in our [documentation](!https://docs.mattermost.com/onboard/advanced-permissions.html).'
+                                        defaultMessage='Permission Schemes set the default permissions for Team Admins, Channel Admins and everyone else. Learn more about permission schemes in our <link>documentation</link>.'
+                                        values={{
+                                            link: (msg: React.ReactNode) => (
+                                                <ExternalLink
+                                                    href='https://docs.mattermost.com/onboard/advanced-permissions.html'
+                                                    location='permission_scheme_settings'
+                                                >
+                                                    {msg}
+                                                </ExternalLink>
+                                            ),
+                                        }}
                                     />
                                 </span>
                             </div>
@@ -233,7 +255,17 @@ export default class PermissionSchemesSettings extends React.PureComponent<Props
                             titleId={t('admin.permissions.systemSchemeBannerTitle')}
                             titleDefault='System Scheme'
                             subtitleId={t('admin.permissions.systemSchemeBannerText')}
-                            subtitleDefault='Set the default permissions inherited by all teams unless a [Team Override Scheme](!https://docs.mattermost.com/onboard/advanced-permissions.html) is applied.'
+                            subtitleDefault='Set the default permissions inherited by all teams unless a <link>Team Override Scheme</link> is applied.'
+                            subtitleValues={{
+                                link: (msg: React.ReactNode) => (
+                                    <ExternalLink
+                                        href='https://docs.mattermost.com/onboard/advanced-permissions.html'
+                                        location='permission_scheme_settings'
+                                    >
+                                        {msg}
+                                    </ExternalLink>
+                                ),
+                            }}
                             url='/admin_console/user_management/permissions/system_scheme'
                             disabled={teamOverrideView !== null}
                             linkTextId={t('admin.permissions.systemSchemeBannerButton')}
@@ -417,3 +449,13 @@ t('admin.permissions.permission.run_create.name');
 t('admin.permissions.permission.run_create.description');
 t('admin.permissions.group.custom_groups.name');
 t('admin.permissions.group.custom_groups.description');
+t('admin.permissions.permission.create_custom_group.name');
+t('admin.permissions.permission.create_custom_group.description');
+t('admin.permissions.permission.manage_custom_group_members.name');
+t('admin.permissions.permission.manage_custom_group_members.description');
+t('admin.permissions.permission.delete_custom_group.name');
+t('admin.permissions.permission.delete_custom_group.description');
+t('admin.permissions.permission.restore_custom_group.name');
+t('admin.permissions.permission.restore_custom_group.description');
+t('admin.permissions.permission.edit_custom_group.name');
+t('admin.permissions.permission.edit_custom_group.description');

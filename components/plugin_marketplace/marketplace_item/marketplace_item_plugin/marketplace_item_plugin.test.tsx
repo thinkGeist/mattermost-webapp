@@ -4,8 +4,14 @@
 import React from 'react';
 import {shallow} from 'enzyme';
 
+import {Provider} from 'react-redux';
+
+import {PluginStatusRedux} from '@mattermost/types/plugins';
+
 import ConfirmModal from 'components/confirm_modal';
 import {mountWithIntl as mount} from 'tests/helpers/intl-test-helper';
+
+import mockStore from 'tests/test_store';
 
 import MarketplaceItemPlugin, {UpdateDetails, UpdateDetailsProps, UpdateConfirmationModal, UpdateConfirmationModalProps, MarketplaceItemPluginProps} from './marketplace_item_plugin';
 
@@ -83,8 +89,20 @@ describe('components/MarketplaceItemPlugin', () => {
         });
 
         it('should render with release notes url', () => {
+            const store = mockStore({
+                entities: {
+                    general: {
+                        config: {},
+                    },
+                    users: {
+                        currentUserId: 'currentUserId',
+                    },
+                },
+            });
             const wrapper = mount(
-                <UpdateDetails {...baseProps}/>,
+                <Provider store={store}>
+                    <UpdateDetails {...baseProps}/>
+                </Provider>,
             );
 
             expect(wrapper).toMatchSnapshot();
@@ -256,6 +274,30 @@ describe('components/MarketplaceItemPlugin', () => {
             const props = {
                 ...baseProps,
                 error: 'An error occurred.',
+            };
+
+            const wrapper = shallow<MarketplaceItemPlugin>(
+                <MarketplaceItemPlugin {...props}/>,
+            );
+
+            expect(wrapper).toMatchSnapshot();
+        });
+
+        test('should render with plugin status error', () => {
+            const pluginStatus: PluginStatusRedux = {
+                active: true,
+                description: '',
+                id: baseProps.id,
+                instances: [],
+                name: baseProps.name,
+                state: 0,
+                version: '',
+                error: 'plugin status error',
+            };
+
+            const props = {
+                ...baseProps,
+                pluginStatus,
             };
 
             const wrapper = shallow<MarketplaceItemPlugin>(

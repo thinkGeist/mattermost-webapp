@@ -2,16 +2,15 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import configureStore from 'redux-mock-store';
 import {Provider} from 'react-redux';
-
-import thunk from 'redux-thunk';
 
 import {mount} from 'enzyme';
 
 import * as teams from 'mattermost-redux/selectors/entities/teams';
 
 import {Channel} from '@mattermost/types/channels';
+
+import mockStore from 'tests/test_store';
 
 import AddMembersButton from './add_members_button';
 
@@ -54,7 +53,6 @@ describe('components/post_view/AddMembersButton', () => {
         },
     };
 
-    const mockStore = configureStore([thunk]);
     const store = mockStore(initialState);
     jest.spyOn(teams, 'getCurrentTeamId').mockReturnValue('team-id');
 
@@ -88,8 +86,8 @@ describe('components/post_view/AddMembersButton', () => {
         expect(wrapper).toMatchSnapshot();
     });
 
-    test('should match snapshot, setHeader and createBoard', () => {
-        const createBoard = (
+    test('should match snapshot, setHeader and pluginButtons', () => {
+        const pluginButtons = (
             <button>
                 {'Create a board'}
             </button>
@@ -104,7 +102,7 @@ describe('components/post_view/AddMembersButton', () => {
             usersLimit: 10,
             channel,
             setHeader,
-            createBoard,
+            pluginButtons,
         };
         const wrapper = mount(
             <Provider store={store}>

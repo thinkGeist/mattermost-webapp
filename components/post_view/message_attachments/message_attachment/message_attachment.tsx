@@ -1,6 +1,5 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-/* eslint-disable react/no-string-refs */
 
 import React, {CSSProperties} from 'react';
 import truncate from 'lodash/truncate';
@@ -30,6 +29,7 @@ import ActionMenu from '../action_menu';
 import {trackEvent} from 'actions/telemetry_actions';
 import FilePreviewModal from '../../../file_preview_modal';
 import {ModalData} from 'types/actions';
+import ExternalLink from 'components/external_link';
 
 type Props = {
 
@@ -329,8 +329,10 @@ export default class MessageAttachment extends React.PureComponent<Props, State>
                 fileInfos: [{
                     has_preview_image: false,
                     link,
-                    extension,
+                    extension: extension ?? '',
+                    name: link,
                 }],
+                startIndex: 0,
             },
         });
     }
@@ -386,14 +388,13 @@ export default class MessageAttachment extends React.PureComponent<Props, State>
         }
         if (attachment.author_link && isUrlSafe(attachment.author_link)) {
             author = [(
-                <a
+                <ExternalLink
                     href={attachment.author_link}
-                    target='_blank'
-                    rel='noopener noreferrer'
                     key={'attachment__author-name'}
+                    location='message_attachment'
                 >
                     {author}
-                </a>
+                </ExternalLink>
             )];
         }
 
@@ -402,14 +403,13 @@ export default class MessageAttachment extends React.PureComponent<Props, State>
             if (attachment.title_link && isUrlSafe(attachment.title_link)) {
                 title = (
                     <h1 className='attachment__title'>
-                        <a
+                        <ExternalLink
                             className='attachment__title-link'
                             href={attachment.title_link}
-                            target='_blank'
-                            rel='noopener noreferrer'
+                            location='message_attachment'
                         >
                             {attachment.title}
-                        </a>
+                        </ExternalLink>
                     </h1>
                 );
             } else {
@@ -534,35 +534,39 @@ export default class MessageAttachment extends React.PureComponent<Props, State>
             useBorderStyle = {borderLeftColor: attachment.color};
         }
 
+        const hasContent = author.length > 0 || Boolean(title) || Boolean(thumb) || Boolean(attachmentText) || Boolean(image) || Boolean(fields) || Boolean(footer) || Boolean(actions);
+
         return (
             <div
                 className={'attachment ' + preTextClass}
-                ref='attachment'
                 onClick={this.handleFormattedTextClick}
             >
                 {preText}
-                <div className='attachment__content'>
-                    <div
-                        className={useBorderStyle ? 'clearfix attachment__container' : 'clearfix attachment__container attachment__container--' + attachment.color}
-                        style={useBorderStyle}
-                    >
-                        {author}
-                        {title}
-                        <div>
-                            <div
-                                className={thumb ? 'attachment__body' : 'attachment__body attachment__body--no_thumb'}
-                            >
-                                {attachmentText}
-                                {image}
-                                {fields}
-                                {footer}
-                                {actions}
+                {
+                    hasContent &&
+                    <div className='attachment__content'>
+                        <div
+                            className={useBorderStyle ? 'clearfix attachment__container' : 'clearfix attachment__container attachment__container--' + attachment.color}
+                            style={useBorderStyle}
+                        >
+                            {author}
+                            {title}
+                            <div>
+                                <div
+                                    className={thumb ? 'attachment__body' : 'attachment__body attachment__body--no_thumb'}
+                                >
+                                    {attachmentText}
+                                    {image}
+                                    {fields}
+                                    {footer}
+                                    {actions}
+                                </div>
+                                {thumb}
+                                <div style={style.footer}/>
                             </div>
-                            {thumb}
-                            <div style={style.footer}/>
                         </div>
                     </div>
-                </div>
+                }
             </div>
         );
     }
@@ -571,4 +575,3 @@ export default class MessageAttachment extends React.PureComponent<Props, State>
 const style = {
     footer: {clear: 'both'} as CSSProperties,
 };
-/* eslint-enable react/no-string-refs */

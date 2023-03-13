@@ -2,8 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {memo} from 'react';
-import classNames from 'classnames';
-import {FormatLetterCaseIcon} from '@mattermost/compass-icons/components';
+import {ChevronDownIcon, ChevronUpIcon, FormatLetterCaseIcon} from '@mattermost/compass-icons/components';
 import {useIntl} from 'react-intl';
 
 import KeyboardShortcutSequence, {KEYBOARD_SHORTCUTS} from 'components/keyboard_shortcuts/keyboard_shortcuts_sequence';
@@ -22,10 +21,19 @@ interface ToggleFormattingBarProps {
 const ToggleFormattingBar = (props: ToggleFormattingBarProps): JSX.Element => {
     const {onClick, active, disabled} = props;
     const {formatMessage} = useIntl();
+    const buttonAriaLabel = formatMessage({id: 'accessibility.button.formatting', defaultMessage: 'formatting'});
     const iconAriaLabel = formatMessage({id: 'generic_icons.format_letter_case', defaultMessage: 'Format letter Case Icon'});
 
-    const tooltip = (
-        <Tooltip id='toggleFormattingBarButtonTooltip'>
+    const tooltip = active ? (
+        <Tooltip id='toggleFormattingBarButtonTooltip_active'>
+            <KeyboardShortcutSequence
+                shortcut={KEYBOARD_SHORTCUTS.msgHideFormatting}
+                hoistDescription={true}
+                isInsideTooltip={true}
+            />
+        </Tooltip>
+    ) : (
+        <Tooltip id='toggleFormattingBarButtonTooltip_inactive'>
             <KeyboardShortcutSequence
                 shortcut={KEYBOARD_SHORTCUTS.msgShowFormatting}
                 hoistDescription={true}
@@ -33,6 +41,8 @@ const ToggleFormattingBar = (props: ToggleFormattingBarProps): JSX.Element => {
             />
         </Tooltip>
     );
+
+    const ChevronIcon = active ? ChevronUpIcon : ChevronDownIcon;
 
     return (
         <OverlayTrigger
@@ -46,10 +56,15 @@ const ToggleFormattingBar = (props: ToggleFormattingBarProps): JSX.Element => {
                 id='toggleFormattingBarButton'
                 onClick={onClick}
                 disabled={disabled}
-                className={classNames({active})}
+                aria-label={buttonAriaLabel}
             >
                 <FormatLetterCaseIcon
                     size={18}
+                    color={'currentColor'}
+                    aria-label={iconAriaLabel}
+                />
+                <ChevronIcon
+                    size={12}
                     color={'currentColor'}
                     aria-label={iconAriaLabel}
                 />

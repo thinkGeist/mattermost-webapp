@@ -6,10 +6,11 @@ import {createSelector} from 'reselect';
 import {General, Preferences} from 'mattermost-redux/constants';
 
 import {getConfig, getFeatureFlagValue, getLicense} from 'mattermost-redux/selectors/entities/general';
+import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
+import {isGuest} from 'mattermost-redux/utils/user_utils';
 
 import {PreferenceType} from '@mattermost/types/preferences';
 import {GlobalState} from '@mattermost/types/store';
-import {Theme, ThemeKey} from 'mattermost-redux/types/themes';
 
 import {createShallowSelector} from 'mattermost-redux/utils/helpers';
 import {getPreferenceKey} from 'mattermost-redux/utils/preference_utils';
@@ -110,6 +111,42 @@ const getThemePreference = createSelector(
     },
 );
 
+export type ThemeKey = 'denim' | 'sapphire' | 'quartz' | 'indigo' | 'onyx';
+
+export type LegacyThemeType = 'Mattermost' | 'Organization' | 'Mattermost Dark' | 'Windows Dark';
+
+export type ThemeType = 'Denim' | 'Sapphire' | 'Quartz' | 'Indigo' | 'Onyx';
+
+export type Theme = {
+    [key: string]: string | undefined;
+    type?: ThemeType | 'custom';
+    sidebarBg: string;
+    sidebarText: string;
+    sidebarUnreadText: string;
+    sidebarTextHoverBg: string;
+    sidebarTextActiveBorder: string;
+    sidebarTextActiveColor: string;
+    sidebarHeaderBg: string;
+    sidebarTeamBarBg: string;
+    sidebarHeaderTextColor: string;
+    onlineIndicator: string;
+    awayIndicator: string;
+    dndIndicator: string;
+    mentionBg: string;
+    mentionBj: string;
+    mentionColor: string;
+    centerChannelBg: string;
+    centerChannelColor: string;
+    newMessageSeparator: string;
+    linkColor: string;
+    buttonBg: string;
+    buttonColor: string;
+    errorTextColor: string;
+    mentionHighlightBg: string;
+    mentionHighlightLink: string;
+    codeTheme: string;
+};
+
 const getDefaultTheme = createSelector('getDefaultTheme', getConfig, (config): Theme => {
     if (config.DefaultTheme && config.DefaultTheme in Preferences.THEMES) {
         const theme: Theme = Preferences.THEMES[config.DefaultTheme as ThemeKey];
@@ -169,6 +206,10 @@ export const shouldShowUnreadsCategory: (state: GlobalState) => boolean = create
     },
 );
 
+export function getUnreadScrollPositionPreference(state: GlobalState): string {
+    return get(state, Preferences.CATEGORY_ADVANCED_SETTINGS, Preferences.UNREAD_SCROLL_POSITION, Preferences.UNREAD_SCROLL_POSITION_START_FROM_LEFT);
+}
+
 export function getCollapsedThreadsPreference(state: GlobalState): string {
     const configValue = getConfig(state)?.CollapsedThreads;
     let preferenceDefault = Preferences.COLLAPSED_REPLY_THREADS_OFF;
@@ -186,10 +227,7 @@ export function getCollapsedThreadsPreference(state: GlobalState): string {
 }
 
 export function isCollapsedThreadsAllowed(state: GlobalState): boolean {
-    return (
-        getFeatureFlagValue(state, 'CollapsedThreads') === 'true' &&
-        getConfig(state).CollapsedThreads !== CollapsedThreads.DISABLED
-    );
+    return Boolean(getConfig(state)) && getConfig(state).CollapsedThreads !== undefined && getConfig(state).CollapsedThreads !== CollapsedThreads.DISABLED;
 }
 
 export function isCollapsedThreadsEnabled(state: GlobalState): boolean {
@@ -204,7 +242,7 @@ export function isGroupChannelManuallyVisible(state: GlobalState, channelId: str
 }
 
 export function isCustomGroupsEnabled(state: GlobalState): boolean {
-    return getFeatureFlagValue(state, 'CustomGroups') === 'true' && getConfig(state).EnableCustomGroups === 'true';
+    return getConfig(state).EnableCustomGroups === 'true';
 }
 
 export function getUseCaseOnboarding(state: GlobalState): boolean {
@@ -212,17 +250,52 @@ export function getUseCaseOnboarding(state: GlobalState): boolean {
 }
 
 export function insightsAreEnabled(state: GlobalState): boolean {
-    return getFeatureFlagValue(state, 'InsightsEnabled') === 'true';
+    const isConfiguredForFeature = getConfig(state).InsightsEnabled === 'true';
+    const featureIsEnabled = getFeatureFlagValue(state, 'InsightsEnabled') === 'true';
+    const currentUserIsGuest = isGuest(getCurrentUser(state).roles);
+    return featureIsEnabled && isConfiguredForFeature && !currentUserIsGuest;
 }
 
-export function cloudFreeEnabled(state: GlobalState): boolean {
-    return getFeatureFlagValue(state, 'CloudFree') === 'true';
-}
-
-export function getIsAdvancedTextEditorEnabled(state: GlobalState): boolean {
-    return getFeatureFlagValue(state, 'AdvancedTextEditor') === 'true';
+export function isGraphQLEnabled(state: GlobalState): boolean {
+    return getFeatureFlagValue(state, 'GraphQL') === 'true';
 }
 
 export function getHasDismissedSystemConsoleLimitReached(state: GlobalState): boolean {
     return getBool(state, Preferences.CATEGORY_UPGRADE_CLOUD, Preferences.SYSTEM_CONSOLE_LIMIT_REACHED, false);
+}
+
+export function syncedDraftsAreAllowed(state: GlobalState): boolean {
+    const isFeatureEnabled = getFeatureFlagValue(state, 'GlobalDrafts') === 'true';
+    const isConfiguredForFeature = getConfig(state).AllowSyncedDrafts === 'true';
+
+    return isFeatureEnabled && isConfiguredForFeature;
+}
+
+export function syncedDraftsAreAllowedAndEnabled(state: GlobalState): boolean {
+    const isFeatureEnabled = getFeatureFlagValue(state, 'GlobalDrafts') === 'true';
+    const isConfiguredForFeature = getConfig(state).AllowSyncedDrafts === 'true';
+    const isConfiguredForUser = getBool(state, Preferences.CATEGORY_ADVANCED_SETTINGS, Preferences.ADVANCED_SYNC_DRAFTS, true);
+
+    return isFeatureEnabled && isConfiguredForFeature && isConfiguredForUser;
+}
+
+export function localDraftsAreEnabled(state: GlobalState): boolean {
+    return getFeatureFlagValue(state, 'GlobalDrafts') === 'true';
+}
+
+export function isReduceOnBoardingTaskList(state: GlobalState): boolean {
+    return getFeatureFlagValue(state, 'ReduceOnBoardingTaskList') === 'true';
+}
+
+export function getVisibleDmGmLimit(state: GlobalState) {
+    const defaultLimit = 40;
+    return getInt(state, Preferences.CATEGORY_SIDEBAR_SETTINGS, Preferences.LIMIT_VISIBLE_DMS_GMS, defaultLimit);
+}
+
+export function autoShowLinkedBoardFFEnabled(state: GlobalState): boolean {
+    return getFeatureFlagValue(state, 'OnboardingAutoShowLinkedBoard') === 'true';
+}
+
+export function onboardingTourTipsEnabled(state: GlobalState): boolean {
+    return getFeatureFlagValue(state, 'OnboardingTourTips') === 'true';
 }

@@ -4,11 +4,11 @@
 import React from 'react';
 import {Provider} from 'react-redux';
 import {shallow} from 'enzyme';
-import configureStore from 'redux-mock-store';
 
 import {Modal} from 'react-bootstrap';
 
 import {mountWithIntl} from 'tests/helpers/intl-test-helper';
+import mockStore from 'tests/test_store';
 
 import {AppCallResponseTypes} from 'mattermost-redux/constants/apps';
 
@@ -163,8 +163,6 @@ describe('AppsFormComponent', () => {
     });
 
     describe('default select element', () => {
-        const mockStore = configureStore();
-
         test('should be enabled by default', () => {
             const selectField = {
                 type: 'static_select',
@@ -197,10 +195,17 @@ describe('AppsFormComponent', () => {
                 entities: {
                     general: {
                         config: {},
+                        license: {},
                     },
-                    channels: {},
+                    channels: {
+                        channels: {},
+                        roles: {},
+                    },
                     teams: {
                         teams: {},
+                    },
+                    posts: {
+                        posts: {},
                     },
                     users: {
                         profiles: {},
@@ -221,7 +226,7 @@ describe('AppsFormComponent', () => {
                     <AppsForm {...props}/>
                 </Provider>,
             );
-            expect(wrapper.find(Modal.Body).find('.react-select__single-value').text()).toEqual('Option3');
+            expect(wrapper.find(Modal.Body).find('div.react-select__single-value').text()).toEqual('Option3');
         });
     });
 });

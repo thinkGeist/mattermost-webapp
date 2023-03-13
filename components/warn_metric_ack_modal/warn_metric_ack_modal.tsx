@@ -5,36 +5,37 @@ import React, {CSSProperties} from 'react';
 import {Modal} from 'react-bootstrap';
 import {FormattedMessage} from 'react-intl';
 
-import {UserProfile} from '@mattermost/types/users';
-import {AnalyticsRow} from '@mattermost/types/admin';
+import {GetFilteredUsersStatsOpts, UsersStats, UserProfile} from '@mattermost/types/users';
+import {ServerError} from '@mattermost/types/errors';
 import {ActionResult} from 'mattermost-redux/types/actions';
 import {WarnMetricStatus} from '@mattermost/types/config';
 
 import {getSiteURL} from 'utils/url';
 import {t} from 'utils/i18n';
-import {Constants, ModalIdentifiers, WarnMetricTypes} from 'utils/constants';
+import {ModalIdentifiers, WarnMetricTypes} from 'utils/constants';
 
 import {trackEvent} from 'actions/telemetry_actions';
-import * as AdminActions from 'actions/admin_actions.jsx';
-
-const StatTypes = Constants.StatTypes;
 
 import * as Utils from 'utils/utils';
 
 import LoadingWrapper from 'components/widgets/loading/loading_wrapper';
 import ErrorLink from 'components/error_page/error_link';
+import ExternalLink from 'components/external_link';
 
 type Props = {
     user: UserProfile;
     telemetryId?: string;
     show: boolean;
     closeParentComponent?: () => Promise<void>;
-    stats?: Record<string, number | AnalyticsRow[]>;
+    totalUsers?: number;
     warnMetricStatus: WarnMetricStatus;
     actions: {
         closeModal: (modalId: string) => void;
-        getStandardAnalytics: () => void;
         sendWarnMetricAck: (warnMetricId: string, forceAck: boolean) => Promise<ActionResult>;
+        getFilteredUsersStats: (filters: GetFilteredUsersStatsOpts) => Promise<{
+            data?: UsersStats;
+            error?: ServerError;
+        }>;
     };
 }
 
@@ -63,7 +64,7 @@ export default class WarnMetricAckModal extends React.PureComponent<Props, State
     }
 
     componentDidMount() {
-        AdminActions.getStandardAnalytics();
+        this.props.actions.getFilteredUsersStats({include_bots: false, include_deleted: false});
     }
 
     onContactUsClick = async (e: any) => {
@@ -120,8 +121,8 @@ export default class WarnMetricAckModal extends React.PureComponent<Props, State
         mailBody += 'Email ' + this.props.user.email;
         mailBody += '\r\n';
 
-        if (this.props.stats && this.props.stats[StatTypes.TOTAL_USERS]) {
-            mailBody += 'Registered Users ' + this.props.stats[StatTypes.TOTAL_USERS];
+        if (this.props.totalUsers) {
+            mailBody += 'Registered Users ' + this.props.totalUsers;
             mailBody += '\r\n';
         }
         mailBody += 'Site URL ' + getSiteURL();
@@ -281,28 +282,23 @@ export default class WarnMetricAckModal extends React.PureComponent<Props, State
 type ErrorLinkProps = {
     defaultMessage: string;
     messageId: string;
-    onClickHandler: (e: React.MouseEvent<HTMLAnchorElement>) => Promise<void>;
+    onClickHandler: (e: React.MouseEvent) => Promise<void>;
     url: string;
     forceAck: boolean;
-}
+};
 
 const WarnMetricAckErrorLink: React.FC<ErrorLinkProps> = ({defaultMessage, messageId, onClickHandler, url, forceAck}: ErrorLinkProps) => {
     return (
-        <a
+        <ExternalLink
             href={url}
-            rel='noopener noreferrer'
-            target='_blank'
             data-forceAck={forceAck}
-            onClick={
-                (e) => {
-                    onClickHandler(e);
-                }
-            }
+            onClick={onClickHandler}
+            location='warn_metric_ack_modal'
         >
             <FormattedMessage
                 id={messageId}
                 defaultMessage={defaultMessage}
             />
-        </a>
+        </ExternalLink>
     );
 };

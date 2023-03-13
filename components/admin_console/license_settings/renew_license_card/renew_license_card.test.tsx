@@ -5,10 +5,10 @@ import React from 'react';
 import {ReactWrapper} from 'enzyme';
 import {act} from 'react-dom/test-utils';
 import {Provider} from 'react-redux';
-import configureStore from 'redux-mock-store';
 
 import {Client4} from 'mattermost-redux/client';
 import {mountWithIntl} from 'tests/helpers/intl-test-helper';
+import mockStore from 'tests/test_store';
 
 import RenewalLicenseCard from './renew_license_card';
 
@@ -32,6 +32,7 @@ describe('components/RenewalLicenseCard', () => {
         license: {
             id: 'license_id',
             ExpiresAt: new Date().getMilliseconds().toString(),
+            SkuShortName: 'skuShortName',
         },
         isLicenseExpired: false,
         totalUsers: 10,
@@ -46,7 +47,6 @@ describe('components/RenewalLicenseCard', () => {
             });
         });
         getRenewalLinkSpy.mockImplementation(() => promise);
-        const mockStore = configureStore();
         const store = mockStore({});
         const wrapper = mountWithIntl(<Provider store={store}><RenewalLicenseCard {...props}/></Provider>);
 
@@ -64,7 +64,6 @@ describe('components/RenewalLicenseCard', () => {
             reject(new Error('License cannot be renewed from portal'));
         });
         getRenewalLinkSpy.mockImplementation(() => promise);
-        const mockStore = configureStore();
         const store = mockStore({});
         const wrapper = mountWithIntl(<Provider store={store}><RenewalLicenseCard {...props}/></Provider>);
 

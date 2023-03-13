@@ -1,18 +1,21 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ChannelTypes, GeneralTypes, PostTypes, UserTypes, ThreadTypes} from 'mattermost-redux/action_types';
+import {ChannelTypes, GeneralTypes, PostTypes, UserTypes, ThreadTypes, InsightTypes, CloudTypes} from 'mattermost-redux/action_types';
 
+import {comparePosts, isPermalink, shouldUpdatePost} from 'mattermost-redux/utils/post_utils';
 import {Posts} from 'mattermost-redux/constants';
-import {PostTypes as PostConstant} from 'utils/constants';
+import {PostTypes as PostConstant} from 'mattermost-redux/constants/posts';
 
 import {GenericAction} from 'mattermost-redux/types/actions';
+
 import {
     OpenGraphMetadata,
     Post,
     PostsState,
     PostOrderBlock,
     MessageHistory,
+    PostAcknowledgement,
 } from '@mattermost/types/posts';
 import {UserProfile} from '@mattermost/types/users';
 import {Reaction} from '@mattermost/types/reactions';
@@ -22,7 +25,7 @@ import {
     RelationOneToMany,
 } from '@mattermost/types/utilities';
 
-import {comparePosts, isPermalink, shouldUpdatePost} from 'mattermost-redux/utils/post_utils';
+import {TopThread} from '@mattermost/types/insights';
 
 export function removeUnneededMetadata(post: Post) {
     if (!post.metadata) {
@@ -45,6 +48,11 @@ export function removeUnneededMetadata(post: Post) {
 
     if (metadata.reactions) {
         Reflect.deleteProperty(metadata, 'reactions');
+        changed = true;
+    }
+
+    if (metadata.reactions) {
+        Reflect.deleteProperty(metadata, 'acknowledgements');
         changed = true;
     }
 
@@ -262,6 +270,23 @@ export function handlePosts(state: RelationOneToOne<Post, Post> = {}, action: Ge
                 is_following: following,
             },
         };
+    }
+
+    case InsightTypes.RECEIVED_TOP_THREADS:
+    case InsightTypes.RECEIVED_MY_TOP_THREADS: {
+        const topThreads = Object.values(action.data.items) as TopThread[];
+
+        if (topThreads.length === 0) {
+            return state;
+        }
+
+        const nextState = {...state};
+
+        for (const thread of topThreads) {
+            handlePostReceived(nextState, thread.post);
+        }
+
+        return nextState;
     }
 
     case UserTypes.LOGOUT_SUCCESS:
@@ -1107,6 +1132,17 @@ function selectedPostId(state = '', action: GenericAction) {
     }
 }
 
+export function postEditHistory(state: Post[] = [], action: GenericAction) {
+    switch (action.type) {
+    case PostTypes.RECEIVED_POST_HISTORY:
+        return action.data;
+    case UserTypes.LOGOUT_SUCCESS:
+        return [];
+    default:
+        return state;
+    }
+}
+
 function currentFocusedPostId(state = '', action: GenericAction) {
     switch (action.type) {
     case PostTypes.RECEIVED_FOCUSED_POST:
@@ -1191,6 +1227,77 @@ export function reactions(state: RelationOneToOne<Post, Record<string, Reaction>
     }
 }
 
+export function acknowledgements(state: RelationOneToOne<Post, Record<UserProfile['id'], number>> = {}, action: GenericAction) {
+    switch (action.type) {
+    case PostTypes.CREATE_ACK_POST_SUCCESS: {
+        const ack = action.data as PostAcknowledgement;
+        const oldState = state[ack.post_id] || {};
+
+        return {
+            ...state,
+            [ack.post_id]: {
+                ...oldState,
+                [ack.user_id]: ack.acknowledged_at,
+            },
+        };
+    }
+    case PostTypes.DELETE_ACK_POST_SUCCESS: {
+        const ack = action.data;
+
+        if (!state[ack.post_id] || !state[ack.post_id][ack.user_id]) {
+            return state;
+        }
+
+        // avoid a race condition
+        const acknowledgedAt = state[ack.post_id][ack.user_id];
+        if (acknowledgedAt > ack.acknowledged_at) {
+            return state;
+        }
+
+        const nextState = {...(state[ack.post_id])};
+        Reflect.deleteProperty(nextState, ack.user_id);
+
+        return {
+            ...state,
+            [ack.post_id]: {
+                ...nextState,
+            },
+        };
+    }
+
+    case PostTypes.RECEIVED_POST: {
+        const post = action.data;
+
+        return storeAcknowledgementsForPost(state, post);
+    }
+
+    case PostTypes.RECEIVED_POSTS: {
+        const posts: Post[] = Object.values(action.data.posts);
+
+        return posts.reduce(storeAcknowledgementsForPost, state);
+    }
+
+    case PostTypes.POST_DELETED:
+    case PostTypes.POST_REMOVED: {
+        const post = action.data;
+
+        if (post && state[post.id]) {
+            const nextState = {...state};
+            Reflect.deleteProperty(nextState, post.id);
+
+            return nextState;
+        }
+
+        return state;
+    }
+
+    case UserTypes.LOGOUT_SUCCESS:
+        return {};
+    default:
+        return state;
+    }
+}
+
 function storeReactionsForPost(state: any, post: Post) {
     if (!post.metadata || !post.metadata.reactions || post.delete_at > 0) {
         return state;
@@ -1206,6 +1313,29 @@ function storeReactionsForPost(state: any, post: Post) {
     return {
         ...state,
         [post.id]: reactionsForPost,
+    };
+}
+
+function storeAcknowledgementsForPost(state: any, post: Post) {
+    if (
+        !post.metadata ||
+        !post.metadata.acknowledgements ||
+        !post.metadata.acknowledgements.length ||
+        post.delete_at > 0
+    ) {
+        return state;
+    }
+
+    const acknowledgementsForPost: Record<UserProfile['id'], number> = {};
+    if (post?.metadata?.acknowledgements && post.metadata.acknowledgements.length > 0) {
+        for (const ack of post.metadata.acknowledgements) {
+            acknowledgementsForPost[ack.user_id] = ack.acknowledged_at;
+        }
+    }
+
+    return {
+        ...state,
+        [post.id]: acknowledgementsForPost,
     };
 }
 
@@ -1372,6 +1502,79 @@ export function expandedURLs(state: Record<string, string> = {}, action: Generic
     }
 }
 
+export const zeroStateLimitedViews = {
+    threads: {},
+    channels: {},
+};
+
+export function limitedViews(
+    state: PostsState['limitedViews'] = zeroStateLimitedViews,
+    action: GenericAction,
+): PostsState['limitedViews'] {
+    switch (action.type) {
+    case PostTypes.RECEIVED_POSTS:
+    case PostTypes.RECEIVED_POSTS_AFTER:
+    case PostTypes.RECEIVED_POSTS_BEFORE:
+    case PostTypes.RECEIVED_POSTS_SINCE:
+    case PostTypes.RECEIVED_POSTS_IN_CHANNEL: {
+        if (action.data.first_inaccessible_post_time && action.channelId) {
+            return {
+                ...state,
+                channels: {
+                    ...state.channels,
+                    [action.channelId]: action.data.first_inaccessible_post_time || 0,
+                },
+            };
+        }
+        return state;
+    }
+    case PostTypes.RECEIVED_POSTS_IN_THREAD: {
+        if (action.data.first_inaccessible_post_time && action.rootId) {
+            return {
+                ...state,
+                threads: {
+                    ...state.threads,
+                    [action.rootId]: action.data.first_inaccessible_post_time || 0,
+                },
+            };
+        }
+        return state;
+    }
+    case CloudTypes.RECEIVED_CLOUD_LIMITS: {
+        const {limits} = action.data;
+
+        // If limits change and there is no message limit any more (e.g. upgrade to non limited plan),
+        // this state is stale and should be dumped.
+        if (!limits?.messages || (!limits?.messages?.history && limits?.messages?.history !== 0)) {
+            return zeroStateLimitedViews;
+        }
+        return state;
+    }
+    case ChannelTypes.RECEIVED_CHANNEL_DELETED:
+    case ChannelTypes.DELETE_CHANNEL_SUCCESS:
+    case ChannelTypes.LEAVE_CHANNEL: {
+        if (action.data && action.data.viewArchivedChannels) {
+            // Nothing to do since we still want to store posts in archived channels
+            return state;
+        }
+
+        const channelId = action.data.id;
+        if (!state.channels[channelId]) {
+            return state;
+        }
+        const newState = {
+            threads: state.threads,
+            channels: {...state.channels},
+        };
+        delete newState.channels[channelId];
+        return newState;
+    }
+
+    default:
+        return state;
+    }
+}
+
 export default function reducer(state: Partial<PostsState> = {}, action: GenericAction) {
     const nextPosts = handlePosts(state.posts, action);
     const nextPostsInChannel = postsInChannel(state.postsInChannel, action, state.posts!, nextPosts);
@@ -1397,6 +1600,9 @@ export default function reducer(state: Partial<PostsState> = {}, action: Generic
         // The current selected post
         selectedPostId: selectedPostId(state.selectedPostId, action),
 
+        // The post history of selected post
+        postEditHistory: postEditHistory(state.postEditHistory, action),
+
         // The current selected focused post (permalink view)
         currentFocusedPostId: currentFocusedPostId(state.currentFocusedPostId, action),
 
@@ -1410,17 +1616,27 @@ export default function reducer(state: Partial<PostsState> = {}, action: Generic
         messagesHistory: messagesHistory(state.messagesHistory, action),
 
         expandedURLs: expandedURLs(state.expandedURLs, action),
+
+        acknowledgements: acknowledgements(state.acknowledgements, action),
+
+        // For cloud instances with a message limit,
+        // whether this particular view has messages that are hidden
+        // because of the cloud workspace limit.
+        limitedViews: limitedViews(state.limitedViews, action),
     };
 
     if (state.posts === nextState.posts && state.postsInChannel === nextState.postsInChannel &&
         state.postsInThread === nextState.postsInThread &&
         state.pendingPostIds === nextState.pendingPostIds &&
         state.selectedPostId === nextState.selectedPostId &&
+        state.postEditHistory === nextState.postEditHistory &&
         state.currentFocusedPostId === nextState.currentFocusedPostId &&
         state.reactions === nextState.reactions &&
+        state.acknowledgements === nextState.acknowledgements &&
         state.openGraph === nextState.openGraph &&
         state.messagesHistory === nextState.messagesHistory &&
-        state.expandedURLs === nextState.expandedURLs) {
+        state.expandedURLs === nextState.expandedURLs &&
+        state.limitedViews === nextState.limitedViews) {
         // None of the children have changed so don't even let the parent object change
         return state;
     }

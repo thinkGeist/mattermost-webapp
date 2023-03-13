@@ -7,7 +7,7 @@ import {FormattedMessage} from 'react-intl';
 import {Posts} from 'mattermost-redux/constants';
 import {Post} from '@mattermost/types/posts';
 
-import {Theme} from 'mattermost-redux/types/themes';
+import {Theme} from 'mattermost-redux/selectors/entities/preferences';
 
 import * as Utils from 'utils/utils';
 
@@ -30,6 +30,7 @@ type Props = {
     currentRelativeTeamUrl: string;
     overflowType?: AttachmentTextOverflowType;
     maxHeight?: number; /* The max height used by the show more component */
+    showPostEditedIndicator?: boolean; /* Whether or not to render the post edited indicator */
 }
 
 type State = {
@@ -159,6 +160,7 @@ export default class PostMessageView extends React.PureComponent<Props, State> {
                         post={post}
                         channelId={post.channel_id}
                         mentionKeys={[]}
+                        showPostEditedIndicator={this.props.showPostEditedIndicator}
                     />
                 </div>
                 <Pluggable

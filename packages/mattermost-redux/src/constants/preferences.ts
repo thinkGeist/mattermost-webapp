@@ -1,9 +1,10 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Theme, ThemeKey} from 'mattermost-redux/types/themes';
+import {Theme, ThemeKey} from 'mattermost-redux/selectors/entities/preferences';
 
 const Preferences = {
+    APP_BAR: 'app_bar',
     CATEGORY_CHANNEL_OPEN_TIME: 'channel_open_time',
     CATEGORY_CHANNEL_APPROXIMATE_VIEW_TIME: 'channel_approximate_view_time',
     CATEGORY_DIRECT_CHANNEL_SHOW: 'direct_channel_show',
@@ -53,6 +54,7 @@ const Preferences = {
     ADVANCED_FILTER_JOIN_LEAVE: 'join_leave',
     ADVANCED_CODE_BLOCK_ON_CTRL_ENTER: 'code_block_ctrl_enter',
     ADVANCED_SEND_ON_CTRL_ENTER: 'send_on_ctrl_enter',
+    ADVANCED_SYNC_DRAFTS: 'sync_drafts',
     CATEGORY_WHATS_NEW_MODAL: 'whats_new_modal',
     HAS_SEEN_SIDEBAR_WHATS_NEW_MODAL: 'has_seen_sidebar_whats_new_modal',
 
@@ -61,12 +63,24 @@ const Preferences = {
     NAME_DISABLE_TELEMETRY: 'disable_telemetry',
     NAME_DISABLE_TYPING_MESSAGES: 'disable_typing_messages',
 
+    UNREAD_SCROLL_POSITION: 'unread_scroll_position',
+    UNREAD_SCROLL_POSITION_START_FROM_LEFT: 'start_from_left_off',
+    UNREAD_SCROLL_POSITION_START_FROM_NEWEST: 'start_from_newest',
+
     CATEGORY_INSIGHTS: 'insights',
     NAME_INSIGHTS_TUTORIAL_STATE: 'insights_tutorial_state',
     INSIGHTS_VIEWED: 'insights_modal_viewed',
 
     CATEGORY_UPGRADE_CLOUD: 'upgrade_cloud',
     SYSTEM_CONSOLE_LIMIT_REACHED: 'system_console_limit_reached',
+
+    NEW_CHANNEL_WITH_BOARD_TOUR_SHOWED: 'channel_with_board_tip_showed',
+
+    AUTO_LINKED_BOARD: 'auto_linked_board',
+    CATEGORY_ONBOARDING: 'category_onboarding',
+
+    CATEGORY_DRAFTS: 'drafts',
+    DRAFTS_TOUR_TIP_SHOWED: 'drafts_tour_tip_showed',
 
     CATEGORY_THEME: 'theme',
     THEMES: {

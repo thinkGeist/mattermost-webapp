@@ -15,8 +15,8 @@ describe('search_results_header', () => {
     test('should display back button when the parent is channel info', () => {
         renderWithIntl(
             <Header
-                channelId={'abcdef'}
                 previousRhsState={RHSStates.CHANNEL_INFO as RhsState}
+                canGoBack={true}
                 isExpanded={false}
                 actions={{
                     closeRightHandSide: jest.fn(),
@@ -33,8 +33,8 @@ describe('search_results_header', () => {
     test('should NOT diplay expand when the parent is channel info', () => {
         renderWithIntl(
             <Header
-                channelId={'abcdef'}
                 previousRhsState={RHSStates.CHANNEL_INFO as RhsState}
+                canGoBack={true}
                 isExpanded={false}
                 actions={{
                     closeRightHandSide: jest.fn(),
@@ -51,8 +51,8 @@ describe('search_results_header', () => {
     test('should diplay expand when the parent is NOT channel info', () => {
         renderWithIntl(
             <Header
-                channelId={'abcdef'}
                 previousRhsState={RHSStates.FLAG as RhsState}
+                canGoBack={true}
                 isExpanded={false}
                 actions={{
                     closeRightHandSide: jest.fn(),

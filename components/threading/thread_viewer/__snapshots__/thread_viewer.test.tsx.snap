@@ -36,13 +36,11 @@ exports[`components/threading/ThreadViewer should match snapshot 1`] = `
         isThreadView={false}
         key="id"
         onCardClick={[Function]}
-        onCardClickPost={[Function]}
         postIds={
           Array [
             "id",
           ]
         }
-        removePost={[MockFunction]}
         selected={
           Object {
             "channel_id": "channel_id",

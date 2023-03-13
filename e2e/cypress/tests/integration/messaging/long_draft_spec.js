@@ -15,6 +15,7 @@ import * as TIMEOUTS from '../../fixtures/timeouts';
 describe('Messaging', () => {
     let otherChannelName;
     let otherChannelUrl;
+    let initialHeight = 0;
 
     before(() => {
         // # Make sure the viewport is the expected one, so written lines always create new lines
@@ -26,6 +27,16 @@ describe('Messaging', () => {
             otherChannelUrl = out.channelUrl;
             cy.visit(out.offTopicUrl);
             cy.postMessage('hello');
+
+            cy.uiGetPostTextBox().invoke('height').then((height) => {
+                initialHeight = height;
+
+                // # Get the height before starting to write
+                // Setting alias based on reference to element seemed to be problematic with Cypress (regression)
+                // Quick hack to reference based on value
+                cy.wrap(initialHeight).as('initialHeight');
+                cy.wrap(initialHeight).as('previousHeight');
+            });
         });
     });
 
@@ -37,9 +48,6 @@ describe('Messaging', () => {
             'Phasellus libero lorem,',
             'facilisis in purus sed, auctor.',
         ];
-
-        // # Get the height before starting to write
-        cy.get('#post_textbox').should('be.visible').clear().invoke('height').as('initialHeight').as('previousHeight');
 
         // # Write all lines
         writeLinesToPostTextBox(lines);
@@ -53,11 +61,11 @@ describe('Messaging', () => {
         verifyPostTextbox('@previousHeight', lines.join('\n'));
 
         // # Clear the textbox
-        cy.get('#post_textbox').clear();
+        cy.uiGetPostTextBox().clear();
         cy.postMessage('World!');
 
         // # Write all lines again
-        cy.get('@initialHeight').as('previousHeight');
+        cy.wrap(initialHeight).as('previousHeight');
         writeLinesToPostTextBox(lines);
 
         // # Visit a different channel by URL and verify textbox
@@ -75,14 +83,14 @@ describe('Messaging', () => {
 function writeLinesToPostTextBox(lines) {
     Cypress._.forEach(lines, (line, i) => {
         // # Add the text
-        cy.get('#post_textbox').type(line, {delay: TIMEOUTS.ONE_HUNDRED_MILLIS}).wait(TIMEOUTS.HALF_SEC);
+        cy.uiGetPostTextBox().type(line, {delay: TIMEOUTS.ONE_HUNDRED_MILLIS}).wait(TIMEOUTS.HALF_SEC);
 
         if (i < lines.length - 1) {
             // # Add new line
-            cy.get('#post_textbox').type('{shift}{enter}').wait(TIMEOUTS.HALF_SEC);
+            cy.uiGetPostTextBox().type('{shift}{enter}').wait(TIMEOUTS.HALF_SEC);
 
             // * Verify new height
-            cy.get('#post_textbox').invoke('height').then((height) => {
+            cy.uiGetPostTextBox().invoke('height').then((height) => {
                 // * Verify previous height should be lower than the current height
                 cy.get('@previousHeight').should('be.lessThan', parseInt(height, 10));
 
@@ -95,7 +103,7 @@ function writeLinesToPostTextBox(lines) {
 }
 
 function verifyPostTextbox(heightSelector, text) {
-    cy.get('#post_textbox').should('be.visible').and('have.text', text).invoke('height').then((currentHeight) => {
+    cy.uiGetPostTextBox().and('have.text', text).invoke('height').then((currentHeight) => {
         cy.get(heightSelector).should('be.gte', currentHeight);
     });
 }

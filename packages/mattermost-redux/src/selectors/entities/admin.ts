@@ -1,12 +1,28 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {createSelector} from 'reselect';
+
 import {DataRetentionCustomPolicies, DataRetentionCustomPolicy} from '@mattermost/types/data_retention';
+import {PluginStatusRedux} from '@mattermost/types/plugins';
+
 import {GlobalState} from '@mattermost/types/store';
+import {LogObject} from '@mattermost/types/admin';
 
 export function getLogs(state: GlobalState) {
     return state.entities.admin.logs;
 }
+export const getAllLogs = createSelector(
+    'getAllLogs',
+    getLogs,
+    (logs) => {
+        return Object.values(logs).reduce<LogObject[]>((acc, log) => {
+            // @ts-expect-error: object that is returned from the server contains an array of logs but ts gets confused that its one log object
+            acc.push(...log);
+            return acc;
+        }, []);
+    },
+);
 
 export function getAudits(state: GlobalState) {
     return state.entities.admin.audits;
@@ -55,4 +71,12 @@ export function getDataRetentionCustomPolicy(state: GlobalState, id: string): Da
 
 export function getAdminAnalytics(state: GlobalState) {
     return state.entities.admin.analytics;
+}
+
+export function getPluginStatuses(state: GlobalState): Record<string, PluginStatusRedux> | undefined {
+    return state.entities.admin.pluginStatuses;
+}
+
+export function getPluginStatus(state: GlobalState, id: string): PluginStatusRedux | undefined {
+    return getPluginStatuses(state)?.[id];
 }

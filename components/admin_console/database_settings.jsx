@@ -4,10 +4,11 @@
 import React from 'react';
 import {FormattedMessage} from 'react-intl';
 
-import FormattedMarkdownMessage from 'components/formatted_markdown_message';
 import {recycleDatabaseConnection} from 'actions/admin_actions.jsx';
 import * as Utils from 'utils/utils';
 import {t} from 'utils/i18n';
+
+import ExternalLink from 'components/external_link';
 
 import AdminSettings from './admin_settings';
 import BooleanSetting from './boolean_setting';
@@ -276,9 +277,19 @@ export default class DatabaseSettings extends AdminSettings {
                     }
                     placeholder={Utils.localizeMessage('admin.service.minimumHashtagLengthExample', 'E.g.: "3"')}
                     helpText={
-                        <FormattedMarkdownMessage
+                        <FormattedMessage
                             id='admin.service.minimumHashtagLengthDescription'
-                            defaultMessage='Minimum number of characters in a hashtag. This must be greater than or equal to 2. MySQL databases must be configured to support searching strings shorter than three characters, [see documentation](!https://dev.mysql.com/doc/refman/8.0/en/fulltext-fine-tuning.html).'
+                            defaultMessage='Minimum number of characters in a hashtag. This must be greater than or equal to 2. MySQL databases must be configured to support searching strings shorter than three characters, <link>see documentation</link>.'
+                            values={{
+                                link: (msg) => (
+                                    <ExternalLink
+                                        location='database_settings'
+                                        href='https://dev.mysql.com/doc/refman/8.0/en/fulltext-fine-tuning.html'
+                                    >
+                                        {msg}
+                                    </ExternalLink>
+                                ),
+                            }}
                         />
                     }
                     value={this.state.minimumHashtagLength}
@@ -315,9 +326,19 @@ export default class DatabaseSettings extends AdminSettings {
                         />
                     }
                     helpText={
-                        <FormattedMarkdownMessage
+                        <FormattedMessage
                             id='admin.sql.disableDatabaseSearchDescription'
-                            defaultMessage='Disables the use of the database to perform searches. Should only be used when other [search engines](!https://mattermost.com/pl/default-search-engine) are configured.'
+                            defaultMessage='Disables the use of the database to perform searches. Should only be used when other <link>search engines</link> are configured.'
+                            values={{
+                                link: (msg) => (
+                                    <ExternalLink
+                                        location='database_settings'
+                                        href='https://mattermost.com/pl/default-search-engine'
+                                    >
+                                        {msg}
+                                    </ExternalLink>
+                                ),
+                            }}
                         />
                     }
                     value={this.state.disableDatabaseSearch}

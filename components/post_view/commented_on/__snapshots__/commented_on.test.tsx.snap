@@ -15,8 +15,8 @@ exports[`components/post_view/CommentedOn should match snapshot 1`] = `
             className="theme user_name"
           >
             <UserProfile
+              colorize={false}
               disablePopover={false}
-              displayName="user_displayName"
               displayUsername={false}
               hasMention={true}
               hideStatus={false}
@@ -54,8 +54,8 @@ exports[`components/post_view/CommentedOn should match snapshot 2`] = `
             className="theme user_name"
           >
             <UserProfile
+              colorize={false}
               disablePopover={false}
-              displayName="override_username"
               displayUsername={false}
               hasMention={true}
               hideStatus={false}
@@ -93,8 +93,8 @@ exports[`components/post_view/CommentedOn should match snapshot 3`] = `
             className="theme user_name"
           >
             <UserProfile
+              colorize={false}
               disablePopover={false}
-              displayName="user_displayName"
               displayUsername={false}
               hasMention={true}
               hideStatus={false}
@@ -134,8 +134,8 @@ exports[`components/post_view/CommentedOn should match snapshots for post with p
             className="theme user_name"
           >
             <UserProfile
+              colorize={false}
               disablePopover={false}
-              displayName="override_username"
               displayUsername={false}
               hasMention={true}
               hideStatus={false}
@@ -173,8 +173,8 @@ exports[`components/post_view/CommentedOn should match snapshots for post with p
             className="theme user_name"
           >
             <UserProfile
+              colorize={false}
               disablePopover={false}
-              displayName="override_username"
               displayUsername={false}
               hasMention={true}
               hideStatus={false}
@@ -212,8 +212,8 @@ exports[`components/post_view/CommentedOn should match snapshots for post with p
             className="theme user_name"
           >
             <UserProfile
+              colorize={false}
               disablePopover={false}
-              displayName="override_username"
               displayUsername={false}
               hasMention={true}
               hideStatus={false}
@@ -251,8 +251,8 @@ exports[`components/post_view/CommentedOn should match snapshots for post with p
             className="theme user_name"
           >
             <UserProfile
+              colorize={false}
               disablePopover={false}
-              displayName="override_username"
               displayUsername={false}
               hasMention={true}
               hideStatus={false}

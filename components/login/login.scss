@@ -5,8 +5,22 @@
 
 .login-body {
     display: flex;
-    flex: 1;
-    align-items: center;
+    flex-direction: column;
+    margin: auto;
+
+    .login-body-action {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+
+        @media (max-width: 700px) {
+            width: 100%;
+        }
+    }
+
+    .login-body-alternate-link {
+        margin-bottom: 18px;
+    }
 
     .login-body-content {
         display: flex;
@@ -16,7 +30,7 @@
         justify-content: center;
 
         .login-body-message-subtitle {
-            color: rgba(var(--center-channel-text-rgb), 0.72);
+            color: rgba(var(--center-channel-color-rgb), 0.72);
             font-size: 18px;
             font-weight: 400;
             line-height: 28px;
@@ -29,12 +43,12 @@
             align-self: flex-start;
 
             .login-body-message-title {
-                padding-right: 60px;
+                padding-right: 48px;
                 color: var(--title-color-indigo-500);
                 font-family: Metropolis;
                 font-size: 80px;
                 font-weight: 600;
-                letter-spacing: -0.05em;
+                letter-spacing: -0.01em;
                 line-height: 88px;
             }
 
@@ -56,21 +70,30 @@
 
                 &.with-brand-image {
                     align-self: center;
+
+                    .login-body-message-subtitle,
+                    .login-body-custom-branding-markdown {
+                        text-align: center;
+                    }
                 }
 
                 .login-body-custom-branding-image {
                     max-height: 540px;
-                    flex: 1;
                     align-self: center;
+                    margin-bottom: 28px;
                     border-radius: 8px;
                 }
+            }
+
+            &.with-alternate-link {
+                margin-top: 40px;
             }
         }
 
         .login-body-card {
             width: 540px;
             box-sizing: border-box;
-            border: 1px solid rgba(var(--center-channel-text-rgb), 0.08);
+            border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
             margin-left: 60px;
             background-color: var(--center-channel-bg);
             border-radius: 8px;
@@ -89,7 +112,7 @@
                 box-shadow: none;
 
                 .login-body-card-title {
-                    color: var(--center-channel-text);
+                    color: var(--center-channel-color);
                     font-family: 'Metropolis';
                     font-size: 22px;
                     font-style: normal;
@@ -138,13 +161,13 @@
                     height: 1px;
                     justify-content: center;
                     margin: 40px 0;
-                    background: rgba(var(--center-channel-text-rgb), 0.08);
+                    background: rgba(var(--center-channel-color-rgb), 0.08);
                     text-align: center;
 
                     .login-body-card-form-divider-label {
                         padding: 0 10px;
                         background-color: var(--center-channel-bg);
-                        color: rgba(var(--center-channel-text-rgb), 0.56);
+                        color: rgba(var(--center-channel-color-rgb), 0.56);
                         font-size: 12px;
                         line-height: 0;
                     }
@@ -169,7 +192,6 @@
 
         .login-body-custom-branding-markdown {
             flex: 1;
-            margin-top: 28px;
 
             ul + p,
             ol + p {
@@ -188,7 +210,7 @@
             p {
                 width: 100%;
                 margin: 0;
-                color: rgba(var(--center-channel-text-rgb), 0.72);
+                color: rgba(var(--center-channel-color-rgb), 0.72);
                 font-size: 18px;
                 font-weight: 400;
                 line-height: 28px;
@@ -207,85 +229,92 @@
         }
 
         .login-body-message .login-body-message-title {
-            padding-right: 130px;
+            padding-right: 110px;
             margin-top: 48px;
         }
     }
 }
 
 @media screen and (max-width: 1199px) {
-    .login-body .login-body-content {
-        flex-direction: column;
-
-        .login-body-message,
-        .login-body-card {
-            width: 640px;
+    .login-body {
+        .login-body-alternate-link {
+            padding-right: 24px;
         }
 
-        .login-body-message {
-            align-self: center;
-            padding: 24px;
+        .login-body-content {
+            flex-direction: column;
 
-            .login-body-message-title {
-                padding-right: 210px;
-                font-size: 64px;
-                line-height: 76px;
+            .login-body-message,
+            .login-body-card {
+                width: 640px;
             }
 
-            .login-body-message-subtitle {
-                margin: 0;
-            }
+            .login-body-message {
+                align-self: center;
+                padding: 24px;
 
-            .login-body-message-svg {
-                display: none;
-            }
+                .login-body-message-title {
+                    padding-right: 180px;
+                    font-size: 64px;
+                    line-height: 76px;
+                }
 
-            &.custom-branding {
-                display: none;
-            }
-        }
+                .login-body-message-subtitle {
+                    margin: 0;
+                }
 
-        .login-body-card {
-            border: none;
-            margin: 0;
-            background-color: unset;
-            box-shadow: none;
-
-            .login-body-card-content {
-                padding: 16px 24px;
-
-                .login-body-card-title {
+                .login-body-message-svg {
                     display: none;
                 }
 
-                .login-body-card-banner {
-                    margin: 0 0 32px;
-                }
-
-                .login-body-card-form {
-                    .login-body-card-form-input {
-                        margin-top: 0;
-                    }
-
-                    .login-body-card-form-input,
-                    .login-body-card-form-password-input {
-                        background-color: var(--center-channel-bg);
-                    }
+                &.custom-branding {
+                    display: none;
                 }
             }
 
-            &.custom-branding {
+            .login-body-card {
+                border: none;
+                margin: 0;
+                background-color: unset;
+                box-shadow: none;
+
                 .login-body-card-content {
+                    padding: 16px 24px;
+
                     .login-body-card-title {
-                        display: block;
-                        font-size: 32px;
-                        line-height: 40px;
+                        display: none;
                     }
 
-                    .login-body-custom-branding-markdown,
-                    .login-body-message-subtitle {
-                        display: block;
+                    .login-body-card-banner {
                         margin: 0 0 32px;
+                    }
+
+                    .login-body-card-form {
+                        .login-body-card-form-input {
+                            margin-top: 0;
+                        }
+
+                        .login-body-card-form-input,
+                        .login-body-card-form-password-input {
+                            background-color: var(--center-channel-bg);
+                        }
+                    }
+                }
+
+                &.custom-branding {
+                    .login-body-card-content {
+                        .login-body-card-title {
+                            display: block;
+                            font-size: 32px;
+                            line-height: 40px;
+                        }
+
+                        .login-body-custom-branding-markdown,
+                        .login-body-message-subtitle {
+                            display: block;
+                            margin: 0 0 32px;
+                            text-align: left;
+                        }
                     }
                 }
             }
@@ -294,23 +323,27 @@
 }
 
 @media screen and (max-width: 699px) {
-    .login-body .login-body-content {
-        min-width: 375px;
+    .login-body {
+        margin: auto 0;
 
-        .login-body-card {
-            width: 100%;
-        }
+        .login-body-content {
+            min-width: 375px;
 
-        .login-body-message {
-            width: auto;
-            align-self: flex-start;
-            padding: 24px;
+            .login-body-card {
+                width: 100%;
+            }
 
-            .login-body-message-title {
-                max-width: 271px;
-                padding-right: 0;
-                font-size: 45px;
-                line-height: 56px;
+            .login-body-message {
+                width: auto;
+                align-self: flex-start;
+                padding: 24px;
+
+                .login-body-message-title {
+                    max-width: 271px;
+                    padding-right: 0;
+                    font-size: 45px;
+                    line-height: 56px;
+                }
             }
         }
     }

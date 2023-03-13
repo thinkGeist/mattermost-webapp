@@ -5,14 +5,16 @@ import React, {useCallback, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 
 import type {ActionResult} from 'mattermost-redux/types/actions';
-import type {Team} from '@mattermost/types/teams';
 
-import SettingItemMax from 'components/setting_item_max.jsx';
+import SettingItemMax from 'components/setting_item_max';
+
 import SettingItemMin from 'components/setting_item_min';
-import FormattedMarkdownMessage from 'components/formatted_markdown_message';
+
+import type {Team} from '@mattermost/types/teams';
+import ExternalLink from 'components/external_link';
 
 type Props = {
-    teamId: string;
+    teamId?: string;
     isActive: boolean;
     isGroupConstrained?: boolean;
     allowOpenInvite?: boolean;
@@ -77,9 +79,19 @@ const OpenInvite = (props: Props) => {
         inputs = [
             <div key='userOpenInviteOptions'>
                 <div>
-                    <FormattedMarkdownMessage
+                    <FormattedMessage
                         id='team_settings.openInviteDescription.groupConstrained'
-                        defaultMessage='No, members of this team are added and removed by linked groups. [Learn More](!https://mattermost.com/pl/default-ldap-group-constrained-team-channel.html)'
+                        defaultMessage='No, members of this team are added and removed by linked groups. <link>Learn More</link>'
+                        values={{
+                            link: (msg: React.ReactNode) => (
+                                <ExternalLink
+                                    href='https://mattermost.com/pl/default-ldap-group-constrained-team-channel.html'
+                                    location='open_invite'
+                                >
+                                    {msg}
+                                </ExternalLink>
+                            ),
+                        }}
                     />
                 </div>
             </div>,
@@ -128,7 +140,7 @@ const OpenInvite = (props: Props) => {
                 <div className='mt-5'>
                     <FormattedMessage
                         id='general_tab.openInviteDesc'
-                        defaultMessage='When allowed, a link to this team will be included on the landing page allowing anyone with an account to join this team. Changing from "Yes" to "No" will regenerate the  invitation code, create a new invitation link and invalidate the previous link.'
+                        defaultMessage='When allowed, a link to this team will be included on the landing page allowing anyone with an account to join this team. Changing from "Yes" to "No" will regenerate the invitation code, create a new invitation link and invalidate the previous link.'
                     />
                 </div>
             </fieldset>,

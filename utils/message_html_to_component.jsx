@@ -5,6 +5,7 @@ import React from 'react';
 import {Parser, ProcessNodeDefinitions} from 'html-to-react';
 
 import AtMention from 'components/at_mention';
+import AtSumOfMembersMention from 'components/at_sum_members_mention';
 import LatexBlock from 'components/latex_block';
 import LatexInline from 'components/latex_inline';
 import LinkTooltip from 'components/link_tooltip/link_tooltip';
@@ -12,6 +13,7 @@ import MarkdownImage from 'components/markdown_image';
 import PostEmoji from 'components/post_emoji';
 import PostEditedIndicator from 'components/post_view/post_edited_indicator';
 import CodeBlock from 'components/code_block/code_block';
+import AtPlanMention from 'components/at_plan_mention';
 
 /*
  * Converts HTML to React components using html-to-react.
@@ -57,14 +59,13 @@ export function messageHtmlToComponent(html, isRHS, options = {}) {
             shouldProcessNode: (node) => node.type === 'tag' && node.name === 'span' && node.attribs['data-edited-post-id'] && node.attribs['data-edited-post-id'] === options.postId,
             processNode: () => {
                 return options.postId && options.editedAt > 0 ? (
-                    <>
+                    <React.Fragment key={`edited-${options.postId}`}>
                         {' '}
                         <PostEditedIndicator
-                            key={options.postId}
                             postId={options.postId}
                             editedAt={options.editedAt}
                         />
-                    </>
+                    </React.Fragment>
                 ) : null;
             },
         },
@@ -110,6 +111,41 @@ export function messageHtmlToComponent(html, isRHS, options = {}) {
                     </AtMention>
                 );
                 return callAtMention;
+            },
+        });
+    }
+
+    if (options.atSumOfMembersMentions) {
+        const mentionAttrib = 'data-sum-of-members-mention';
+        processingInstructions.push({
+            replaceChildren: true,
+            shouldProcessNode: (node) => node.attribs && node.attribs[mentionAttrib],
+            processNode: (node) => {
+                const mentionName = node.attribs[mentionAttrib];
+                const sumOfMembersMention = (
+                    <AtSumOfMembersMention
+                        postId={options.postId}
+                        userIds={options.userIds}
+                        messageMetadata={options.messageMetadata}
+                        text={mentionName}
+                    />);
+                return sumOfMembersMention;
+            },
+        });
+    }
+
+    if (options.atPlanMentions) {
+        const mentionAttrib = 'data-plan-mention';
+        processingInstructions.push({
+            replaceChildren: true,
+            shouldProcessNode: (node) => node.attribs && node.attribs[mentionAttrib],
+            processNode: (node) => {
+                const mentionName = node.attribs[mentionAttrib];
+                const sumOfMembersMention = (
+                    <AtPlanMention
+                        plan={mentionName}
+                    />);
+                return sumOfMembersMention;
             },
         });
     }
@@ -166,7 +202,10 @@ export function messageHtmlToComponent(html, isRHS, options = {}) {
             shouldProcessNode: (node) => node.attribs && node.attribs['data-latex'],
             processNode: (node) => {
                 return (
-                    <LatexBlock content={node.attribs['data-latex']}/>
+                    <LatexBlock
+                        key={node.attribs['data-latex']}
+                        content={node.attribs['data-latex']}
+                    />
                 );
             },
         });
@@ -189,7 +228,7 @@ export function messageHtmlToComponent(html, isRHS, options = {}) {
             processNode: (node) => {
                 return (
                     <CodeBlock
-                        id={options.postId}
+                        key={node.attribs['data-codeblock-code']}
                         code={node.attribs['data-codeblock-code']}
                         language={node.attribs['data-codeblock-language']}
                         searchedContent={node.attribs['data-codeblock-searchedcontent']}

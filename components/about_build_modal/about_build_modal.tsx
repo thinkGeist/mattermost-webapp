@@ -7,11 +7,12 @@ import {FormattedMessage} from 'react-intl';
 
 import {ClientConfig, ClientLicense} from '@mattermost/types/config';
 
-import FormattedMarkdownMessage from 'components/formatted_markdown_message';
 import MattermostLogo from 'components/widgets/icons/mattermost_logo';
 import Nbsp from 'components/html_entities/nbsp';
 
 import {AboutLinks} from 'utils/constants';
+
+import ExternalLink from 'components/external_link';
 
 import AboutBuildModalCloud from './about_build_modal_cloud/about_build_modal_cloud';
 
@@ -89,13 +90,12 @@ export default class AboutBuildModal extends React.PureComponent<Props, State> {
                     id='about.teamEditionLearn'
                     defaultMessage='Join the Mattermost community at '
                 />
-                <a
-                    target='_blank'
-                    rel='noopener noreferrer'
+                <ExternalLink
+                    location='about_build_modal'
                     href='https://mattermost.com/community/'
                 >
                     {'mattermost.com/community/'}
-                </a>
+                </ExternalLink>
             </div>
         );
 
@@ -121,13 +121,12 @@ export default class AboutBuildModal extends React.PureComponent<Props, State> {
                         id='about.enterpriseEditionLearn'
                         defaultMessage='Learn more about Enterprise Edition at '
                     />
-                    <a
-                        target='_blank'
-                        rel='noopener noreferrer'
+                    <ExternalLink
+                        location='about_build_modal'
                         href='https://mattermost.com/'
                     >
                         {'mattermost.com'}
-                    </a>
+                    </ExternalLink>
                 </div>
             );
 
@@ -151,31 +150,29 @@ export default class AboutBuildModal extends React.PureComponent<Props, State> {
         }
 
         const termsOfService = (
-            <a
-                target='_blank'
+            <ExternalLink
+                location='about_build_modal'
                 id='tosLink'
-                rel='noopener noreferrer'
                 href={AboutLinks.TERMS_OF_SERVICE}
             >
                 <FormattedMessage
                     id='about.tos'
                     defaultMessage='Terms of Use'
                 />
-            </a>
+            </ExternalLink>
         );
 
         const privacyPolicy = (
-            <a
-                target='_blank'
+            <ExternalLink
                 id='privacyLink'
-                rel='noopener noreferrer'
+                location='about_build_modal'
                 href={AboutLinks.PRIVACY_POLICY}
             >
                 <FormattedMessage
                     id='about.privacy'
                     defaultMessage='Privacy Policy'
                 />
-            </a>
+            </ExternalLink>
         );
 
         // Only show build number if it's a number (so only builds from Jenkins)
@@ -213,7 +210,9 @@ export default class AboutBuildModal extends React.PureComponent<Props, State> {
                     >
                         <FormattedMessage
                             id='about.title'
-                            values={{appTitle: config.SiteName || 'Mattermost'}}
+                            values={{
+                                appTitle: config.SiteName || 'Mattermost',
+                            }}
                             defaultMessage='About {appTitle}'
                         />
                     </Modal.Title>
@@ -225,23 +224,31 @@ export default class AboutBuildModal extends React.PureComponent<Props, State> {
                         </div>
                         <div>
                             <h3 className='about-modal__title'>
-                                <strong>{'Mattermost'} {title}</strong>
+                                <strong>
+                                    {'Mattermost'} {title}
+                                </strong>
                             </h3>
-                            <p className='about-modal__subtitle pb-2'>{subTitle}</p>
+                            <p className='about-modal__subtitle pb-2'>
+                                {subTitle}
+                            </p>
                             <div className='form-group less'>
                                 <div>
                                     <FormattedMessage
                                         id='about.version'
                                         defaultMessage='Mattermost Version:'
                                     />
-                                    <span id='versionString'>{'\u00a0' + mmversion}</span>
+                                    <span id='versionString'>
+                                        {'\u00a0' + mmversion}
+                                    </span>
                                 </div>
                                 <div>
                                     <FormattedMessage
                                         id='about.dbversion'
                                         defaultMessage='Database Schema Version:'
                                     />
-                                    <span id='dbversionString'>{'\u00a0' + config.SchemaVersion}</span>
+                                    <span id='dbversionString'>
+                                        {'\u00a0' + config.SchemaVersion}
+                                    </span>
                                 </div>
                                 {buildnumber}
                                 <div>
@@ -276,9 +283,35 @@ export default class AboutBuildModal extends React.PureComponent<Props, State> {
                     </div>
                     <div className='about-modal__notice form-group pt-3'>
                         <p>
-                            <FormattedMarkdownMessage
+                            <FormattedMessage
                                 id='about.notice'
-                                defaultMessage='Mattermost is made possible by the open source software used in our [server](!https://github.com/mattermost/mattermost-server/blob/master/NOTICE.txt), [desktop](!https://github.com/mattermost/desktop/blob/master/NOTICE.txt) and [mobile](!https://github.com/mattermost/mattermost-mobile/blob/master/NOTICE.txt) apps.'
+                                defaultMessage='Mattermost is made possible by the open source software used in our <linkServer>server</linkServer>, <linkDesktop>desktop</linkDesktop> and <linkMobile>mobile</linkMobile> apps.'
+                                values={{
+                                    linkServer: (msg: React.ReactNode) => (
+                                        <ExternalLink
+                                            location='about_build_modal'
+                                            href='https://github.com/mattermost/mattermost-server/blob/master/NOTICE.txt'
+                                        >
+                                            {msg}
+                                        </ExternalLink>
+                                    ),
+                                    linkDesktop: (msg: React.ReactNode) => (
+                                        <ExternalLink
+                                            location='about_build_modal'
+                                            href='https://github.com/mattermost/desktop/blob/master/NOTICE.txt'
+                                        >
+                                            {msg}
+                                        </ExternalLink>
+                                    ),
+                                    linkMobile: (msg: React.ReactNode) => (
+                                        <ExternalLink
+                                            location='about_build_modal'
+                                            href='https://github.com/mattermost/mattermost-mobile/blob/master/NOTICE.txt'
+                                        >
+                                            {msg}
+                                        </ExternalLink>
+                                    ),
+                                }}
                             />
                         </p>
                     </div>
@@ -288,26 +321,34 @@ export default class AboutBuildModal extends React.PureComponent<Props, State> {
                                 id='about.hash'
                                 defaultMessage='Build Hash:'
                             />
-                            <Nbsp/>{config.BuildHash}
+                            <Nbsp/>
+                            {config.BuildHash}
                             <br/>
                             <FormattedMessage
                                 id='about.hashee'
                                 defaultMessage='EE Build Hash:'
                             />
-                            <Nbsp/>{config.BuildHashEnterprise}
+                            <Nbsp/>
+                            {config.BuildHashEnterprise}
                             <br/>
                             <FormattedMessage
                                 id='about.hashwebapp'
                                 defaultMessage='Webapp Build Hash:'
                             />
-                            <Nbsp/>{/* global COMMIT_HASH */ this.props.webappBuildHash || (typeof COMMIT_HASH === 'undefined' ? '' : COMMIT_HASH)}
+                            <Nbsp/>
+                            {
+                                /* global COMMIT_HASH */ this.props.
+                                    webappBuildHash ||
+                                    (typeof COMMIT_HASH === 'undefined' ? '' : COMMIT_HASH)
+                            }
                         </p>
                         <p>
                             <FormattedMessage
                                 id='about.date'
                                 defaultMessage='Build Date:'
                             />
-                            <Nbsp/>{config.BuildDate}
+                            <Nbsp/>
+                            {config.BuildDate}
                         </p>
                     </div>
                 </Modal.Body>

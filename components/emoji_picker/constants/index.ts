@@ -3,7 +3,7 @@
 
 import {EmojiCategory} from '@mattermost/types/emojis';
 
-import * as Emoji from 'utils/emoji.jsx';
+import * as Emoji from 'utils/emoji';
 
 import {Category, Categories} from '../types';
 
@@ -32,7 +32,7 @@ function createCategory(name: EmojiCategory): Category {
         name,
         id: Emoji.CategoryTranslations.get(name) || '',
         className: categoryClass.get(name) || '',
-        message: Emoji.CategoryMessage.get(name),
+        message: Emoji.CategoryMessage.get(name)!,
     };
 }
 

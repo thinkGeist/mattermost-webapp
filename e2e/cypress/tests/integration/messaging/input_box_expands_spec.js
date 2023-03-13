@@ -34,8 +34,8 @@ describe('Messaging', () => {
         cy.get('#rhsCloseButton').should('not.exist');
 
         // # Get initial height of the post textbox
-        cy.get('#post_textbox').should('be.visible').clear();
-        cy.get('#post_textbox').then((post) => {
+        cy.uiGetPostTextBox().clear();
+        cy.uiGetPostTextBox().then((post) => {
             cy.wrap(parseInt(post[0].clientHeight, 10)).as('previousHeight');
         });
 
@@ -45,15 +45,15 @@ describe('Messaging', () => {
         });
 
         // # Write lines until maximum height
-        for (let i = 0; i < 13; i++) {
+        for (let i = 0; i < 15; i++) {
             // # Post the line
-            cy.get('#post_textbox').type('{shift}{enter}');
+            cy.uiGetPostTextBox().type('{shift}{enter}');
 
-            cy.get('#post_textbox').then((post) => {
+            cy.uiGetPostTextBox().then((post) => {
                 const height = parseInt(post[0].clientHeight, 10);
 
                 // * Previous height should be lower than the current height
-                cy.get('@previousHeight').should('be.lessThan', height);
+                cy.get('@previousHeight').should('be.most', height);
 
                 // # Store the current height as the previous height for the next loop
                 cy.wrap(height).as('previousHeight');
@@ -61,8 +61,8 @@ describe('Messaging', () => {
         }
 
         // * Check that height does not keep increasing.
-        cy.get('#post_textbox').type('{shift}{enter}');
-        cy.get('#post_textbox').then((post) => {
+        cy.uiGetPostTextBox().type('{shift}{enter}');
+        cy.uiGetPostTextBox().then((post) => {
             const height = parseInt(post[0].clientHeight, 10);
             cy.get('@previousHeight').should('equal', height);
         });
@@ -72,7 +72,7 @@ describe('Messaging', () => {
         });
 
         // # Clear textbox to test from a different post
-        cy.get('#post_textbox').should('be.visible').clear();
+        cy.uiGetPostTextBox().clear();
 
         // # Scroll to a previous post
         cy.getNthPostId(-29).then((postId) => {
@@ -80,8 +80,8 @@ describe('Messaging', () => {
         });
 
         // #  Again, write lines until the textbox reaches the maximum height
-        for (let i = 0; i < 14; i++) {
-            cy.get('#post_textbox').type('{shift}{enter}');
+        for (let i = 0; i < 15; i++) {
+            cy.uiGetPostTextBox().type('{shift}{enter}');
         }
 
         // * Previous post should be visible

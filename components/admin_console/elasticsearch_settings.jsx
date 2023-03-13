@@ -9,6 +9,8 @@ import {JobStatuses, JobTypes} from 'utils/constants';
 import * as Utils from 'utils/utils';
 import {t} from 'utils/i18n';
 
+import ExternalLink from 'components/external_link';
+
 import AdminSettings from './admin_settings';
 import BooleanSetting from './boolean_setting';
 import JobsTable from './jobs';
@@ -20,6 +22,9 @@ export default class ElasticsearchSettings extends AdminSettings {
     getConfigFromState = (config) => {
         config.ElasticsearchSettings.ConnectionURL = this.state.connectionUrl;
         config.ElasticsearchSettings.SkipTLSVerification = this.state.skipTLSVerification;
+        config.ElasticsearchSettings.CA = this.state.ca;
+        config.ElasticsearchSettings.ClientCert = this.state.clientCert;
+        config.ElasticsearchSettings.ClientKey = this.state.clientKey;
         config.ElasticsearchSettings.Username = this.state.username;
         config.ElasticsearchSettings.Password = this.state.password;
         config.ElasticsearchSettings.Sniff = this.state.sniff;
@@ -34,6 +39,9 @@ export default class ElasticsearchSettings extends AdminSettings {
         return {
             connectionUrl: config.ElasticsearchSettings.ConnectionURL,
             skipTLSVerification: config.ElasticsearchSettings.SkipTLSVerification,
+            ca: config.ElasticsearchSettings.CA,
+            clientCert: config.ElasticsearchSettings.ClientCert,
+            clientKey: config.ElasticsearchSettings.ClientKey,
             username: config.ElasticsearchSettings.Username,
             password: config.ElasticsearchSettings.Password,
             sniff: config.ElasticsearchSettings.Sniff,
@@ -61,7 +69,7 @@ export default class ElasticsearchSettings extends AdminSettings {
             }
         }
 
-        if (id === 'connectionUrl' || id === 'skipTLSVerification' || id === 'username' || id === 'password' || id === 'sniff') {
+        if (id === 'connectionUrl' || id === 'skipTLSVerification' || id === 'username' || id === 'password' || id === 'sniff' || id === 'ca' || id === 'clientCert' || id === 'clientKey') {
             this.setState({
                 configTested: false,
                 canSave: false,
@@ -150,16 +158,15 @@ export default class ElasticsearchSettings extends AdminSettings {
                             defaultMessage='When true, indexing of new posts occurs automatically. Search queries will use database search until "Enable Elasticsearch for search queries" is enabled. {documentationLink}'
                             values={{
                                 documentationLink: (
-                                    <a
+                                    <ExternalLink
+                                        location='elasticsearch_settings'
                                         href='https://docs.mattermost.com/scale/elasticsearch.html'
-                                        rel='noopener noreferrer'
-                                        target='_blank'
                                     >
                                         <FormattedMessage
                                             id='admin.elasticsearch.enableIndexingDescription.documentationLinkText'
                                             defaultMessage='Learn more about Elasticsearch in our documentation.'
                                         />
-                                    </a>
+                                    </ExternalLink>
                                 ),
                             }}
                         />
@@ -184,16 +191,15 @@ export default class ElasticsearchSettings extends AdminSettings {
                             defaultMessage='The address of the Elasticsearch server. {documentationLink}'
                             values={{
                                 documentationLink: (
-                                    <a
+                                    <ExternalLink
+                                        location='elasticsearch_settings'
                                         href='https://docs.mattermost.com/scale/elasticsearch.html'
-                                        rel='noopener noreferrer'
-                                        target='_blank'
                                     >
                                         <FormattedMessage
                                             id='admin.elasticsearch.connectionUrlExample.documentationLinkText'
                                             defaultMessage='Please see documentation with server setup instructions.'
                                         />
-                                    </a>
+                                    </ExternalLink>
                                 ),
                             }}
                         />
@@ -202,6 +208,66 @@ export default class ElasticsearchSettings extends AdminSettings {
                     disabled={this.props.isDisabled || !this.state.enableIndexing}
                     onChange={this.handleSettingChanged}
                     setByEnv={this.isSetByEnv('ElasticsearchSettings.ConnectionURL')}
+                />
+                <TextSetting
+                    id='ca'
+                    label={
+                        <FormattedMessage
+                            id='admin.elasticsearch.caTitle'
+                            defaultMessage='CA path:'
+                        />
+                    }
+                    placeholder={Utils.localizeMessage('admin.elasticsearch.caExample', 'E.g.: "./elasticsearch/ca.pem"')}
+                    helpText={
+                        <FormattedMessage
+                            id='admin.elasticsearch.caDescription'
+                            defaultMessage='(Optional) Custom Certificate Authority certificates for the Elasticsearch server. Leave this empty to use the default CAs from the operating system.'
+                        />
+                    }
+                    value={this.state.ca}
+                    disabled={this.props.isDisabled || !this.state.enableIndexing}
+                    onChange={this.handleSettingChanged}
+                    setByEnv={this.isSetByEnv('ElasticsearchSettings.CA')}
+                />
+                <TextSetting
+                    id='clientCert'
+                    label={
+                        <FormattedMessage
+                            id='admin.elasticsearch.clientCertTitle'
+                            defaultMessage='Client Certificate path:'
+                        />
+                    }
+                    placeholder={Utils.localizeMessage('admin.elasticsearch.clientCertExample', 'E.g.: "./elasticsearch/client-cert.pem"')}
+                    helpText={
+                        <FormattedMessage
+                            id='admin.elasticsearch.clientCertDescription'
+                            defaultMessage='(Optional) The client certificate for the connection to the Elasticsearch server in the PEM format.'
+                        />
+                    }
+                    value={this.state.clientCert}
+                    disabled={this.props.isDisabled || !this.state.enableIndexing}
+                    onChange={this.handleSettingChanged}
+                    setByEnv={this.isSetByEnv('ElasticsearchSettings.ClientCert')}
+                />
+                <TextSetting
+                    id='clientKey'
+                    label={
+                        <FormattedMessage
+                            id='admin.elasticsearch.clientKeyTitle'
+                            defaultMessage='Client Certificate Key path:'
+                        />
+                    }
+                    placeholder={Utils.localizeMessage('admin.elasticsearch.clientKeyExample', 'E.g.: "./elasticsearch/client-key.pem"')}
+                    helpText={
+                        <FormattedMessage
+                            id='admin.elasticsearch.clientKeyDescription'
+                            defaultMessage='(Optional) The key for the client certificate in the PEM format.'
+                        />
+                    }
+                    value={this.state.clientKey}
+                    disabled={this.props.isDisabled || !this.state.enableIndexing}
+                    onChange={this.handleSettingChanged}
+                    setByEnv={this.isSetByEnv('ElasticsearchSettings.ClientKey')}
                 />
                 <BooleanSetting
                     id='skipTLSVerification'

@@ -18,16 +18,6 @@ describe('Header', () => {
         cy.shouldNotRunOnCloudEdition();
         cy.shouldHavePluginUploadEnabled();
 
-        // # Enable Bots and plugins
-        cy.apiUpdateConfig({
-            ServiceSettings: {
-                EnableBotAccountCreation: true,
-            },
-            PluginSettings: {
-                Enable: true,
-            },
-        });
-
         // # Setup and visit town-square
         cy.apiInitSetup().then(({team}) => {
             cy.visit(`/${team.name}/channels/town-square`);
@@ -61,9 +51,9 @@ describe('Header', () => {
         // # Open a DM with the bot
         cy.uiAddDirectMessage().click().wait(TIMEOUTS.ONE_SEC);
         cy.findByRole('dialog', {name: 'Direct Messages'}).should('be.visible').wait(TIMEOUTS.ONE_SEC);
-        cy.findByRole('textbox', {name: 'Search for people'}).click({force: true}).
-            type('matterpoll').wait(TIMEOUTS.ONE_SEC).
-            type('{enter}');
+        cy.findByRole('textbox', {name: 'Search for people'}).
+            typeWithForce('matterpoll').wait(TIMEOUTS.ONE_SEC).
+            typeWithForce('{enter}');
         cy.get('#selectItems').contains('matterpoll');
         cy.get('#saveItems').click();
 

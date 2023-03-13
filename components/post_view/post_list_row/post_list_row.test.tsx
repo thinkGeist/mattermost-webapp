@@ -7,14 +7,16 @@ import React from 'react';
 import * as PostListUtils from 'mattermost-redux/utils/post_list';
 
 import {ChannelType} from '@mattermost/types/channels';
+import {CloudUsage} from '@mattermost/types/cloud';
 
 import CombinedUserActivityPost from 'components/post_view/combined_user_activity_post';
-import Post from 'components/post_view/post';
+import Post from 'components/post';
 import DateSeparator from 'components/post_view/date_separator';
 import NewMessageSeparator from 'components/post_view/new_message_separator/new_message_separator';
 import ChannelIntroMessage from 'components/post_view/channel_intro_message/';
 
 import {PostListRowListIds} from 'utils/constants';
+import {TestHelper} from 'utils/test_helper';
 
 import PostListRow from './post_list_row';
 
@@ -32,6 +34,12 @@ describe('components/post_view/post_list_row', () => {
         actions: {
             emitShortcutReactToLastPostFrom: jest.fn(),
         },
+        channelLimitExceeded: false,
+        limitsLoaded: false,
+        limits: {},
+        usage: {} as CloudUsage,
+        post: TestHelper.getPostMock({id: 'post_id_1'}),
+        currentUserId: 'user_id_1',
     };
 
     test('should render more messages loading indicator', () => {

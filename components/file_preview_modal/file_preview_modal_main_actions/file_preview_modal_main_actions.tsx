@@ -14,12 +14,14 @@ import Tooltip from 'components/tooltip';
 
 import {GlobalState} from 'types/store';
 
-import Constants from 'utils/constants';
-import {copyToClipboard} from 'utils/utils';
+import Constants, {FileTypes} from 'utils/constants';
+import {copyToClipboard, getFileType} from 'utils/utils';
 
 import {isFileInfo, LinkInfo} from '../types';
 
 import './file_preview_modal_main_actions.scss';
+import CopyButton from 'components/copy_button';
+import ExternalLink from 'components/external_link';
 
 interface DownloadLinkProps {
     download?: string;
@@ -35,7 +37,9 @@ interface Props {
     fileInfo: FileInfo | LinkInfo;
     enablePublicLink: boolean;
     canDownloadFiles: boolean;
+    canCopyContent: boolean;
     handleModalClose: () => void;
+    content: string;
 }
 
 const FilePreviewModalMainActions: React.FC<Props> = (props: Props) => {
@@ -128,19 +132,32 @@ const FilePreviewModalMainActions: React.FC<Props> = (props: Props) => {
                 </Tooltip>
             }
         >
-            <a
+            <ExternalLink
                 href={props.fileURL}
                 className='file-preview-modal-main-actions__action-item'
-                target='_blank'
-                rel='noopener noreferrer'
+                location='file_preview_modal_main_actions'
                 download={props.filename}
             >
                 <i className='icon icon-download-outline'/>
-            </a>
+            </ExternalLink>
         </OverlayTrigger>
+    );
+    const getBeforeCopyText = () => {
+        const fileType = getFileType(props.fileInfo.extension);
+        return fileType === FileTypes.TEXT ? 'Copy text' : undefined;
+    };
+
+    const copy = (
+        <CopyButton
+            className='file-preview-modal-main-actions__action-item'
+            beforeCopyText={getBeforeCopyText()}
+            placement={tooltipPlacement}
+            content={props.content}
+        />
     );
     return (
         <div className='file-preview-modal-main-actions__actions'>
+            {!props.showOnlyClose && props.canCopyContent && copy}
             {!props.showOnlyClose && props.enablePublicLink && props.showPublicLink && publicLink}
             {!props.showOnlyClose && props.canDownloadFiles && download}
             {props.showClose && closeButton}

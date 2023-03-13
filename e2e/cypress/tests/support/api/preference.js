@@ -295,3 +295,42 @@ Cypress.Commands.add('apiSaveSkipStepsPreference', (userId, value) => {
 
     return cy.apiSaveUserPreference([preference], userId);
 });
+
+Cypress.Commands.add('apiSaveUnreadScrollPositionPreference', (userId, value) => {
+    const preference = {
+        user_id: userId,
+        category: 'advanced_settings',
+        name: 'unread_scroll_position',
+        value,
+    };
+
+    return cy.apiSaveUserPreference([preference], userId);
+});
+
+Cypress.Commands.add('apiSaveDraftsTourTipPreference', (userId, value) => {
+    const preference = {
+        user_id: userId,
+        category: 'drafts',
+        name: 'drafts_tour_tip_showed',
+        value: JSON.stringify({drafts_tour_tip_showed: value}),
+    };
+
+    return cy.apiSaveUserPreference([preference], userId);
+});
+
+Cypress.Commands.add('apiBoardsWelcomePageViewed', (userId) => {
+    const preferences = [{
+        user_id: userId,
+        category: 'boards',
+        name: 'welcomePageViewed',
+        value: '1',
+    },
+    {
+        user_id: userId,
+        category: 'boards',
+        name: 'version72MessageCanceled',
+        value: 'true',
+    }];
+
+    return cy.apiSaveUserPreference(preferences, userId);
+});

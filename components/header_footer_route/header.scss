@@ -24,7 +24,7 @@
             @include link;
 
             display: flex;
-            color: var(--center-channel-text);
+            color: var(--center-channel-color);
             font-family: 'Metropolis';
             font-size: 20px;
             font-weight: 600;
@@ -33,23 +33,7 @@
 
             svg {
                 width: 170px;
-                fill: var(--center-channel-text);
-            }
-        }
-
-        .header-alternate-container {
-            margin-left: auto;
-
-            .header-alternate-message {
-                color: var(--center-channel-text-rgb);
-                font-size: 12px;
-                line-height: 16px;
-            }
-
-            .header-alternate-link {
-                padding-left: 4px;
-
-                @include link;
+                fill: var(--center-channel-color);
             }
         }
     }
@@ -75,14 +59,6 @@
         .header-main {
             .header-logo-link svg {
                 width: 145px;
-            }
-
-            .header-alternate-container {
-                margin-left: 0;
-
-                .header-alternate-message {
-                    display: none;
-                }
             }
         }
 

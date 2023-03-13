@@ -1,14 +1,13 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-/* eslint-disable react/no-string-refs */
 
 import React from 'react';
 import {FormattedMessage} from 'react-intl';
 
+import ExternalLink from 'components/external_link';
+
 import Constants from 'utils/constants';
 import * as Utils from 'utils/utils';
-
-import FormattedMarkdownMessage from 'components/formatted_markdown_message.jsx';
 
 import AdminSettings from './admin_settings';
 import DropdownSetting from './dropdown_setting.jsx';
@@ -124,9 +123,19 @@ export default class PushSettings extends AdminSettings {
         let pushServerHelpText = null;
         if (this.state.pushNotificationServerType === PUSH_NOTIFICATIONS_OFF) {
             sendHelpText = (
-                <FormattedMarkdownMessage
+                <FormattedMessage
                     id='admin.email.pushOffHelp'
-                    defaultMessage='Please see [documentation on push notifications](!https://docs.mattermost.com/deploy/mobile-hpns.html) to learn more about setup options.'
+                    defaultMessage='Please see <link>documentation on push notifications</link> to learn more about setup options.'
+                    values={{
+                        link: (msg) => (
+                            <ExternalLink
+                                href='https://docs.mattermost.com/deploy/mobile-hpns.html'
+                                location='push_settings'
+                            >
+                                {msg}
+                            </ExternalLink>
+                        ),
+                    }}
                 />
             );
         } else if (this.state.pushNotificationServerType === PUSH_NOTIFICATIONS_MHPNS) {
@@ -136,34 +145,28 @@ export default class PushSettings extends AdminSettings {
                     defaultMessage='Download <linkIOS>Mattermost iOS app</linkIOS> from iTunes. Download <linkAndroid>Mattermost Android app</linkAndroid> from Google Play. Learn more about the <linkHPNS>Mattermost Hosted Push Notification Service</linkHPNS>.'
                     values={{
                         linkIOS: (msg) => (
-                            <a
+                            <ExternalLink
                                 href='https://mattermost.com/mattermost-ios-app/'
-                                referrer='noreferrer'
-                                target='_blank'
-                                rel='noreferrer'
+                                location='push_settings'
                             >
                                 {msg}
-                            </a>
+                            </ExternalLink>
                         ),
                         linkAndroid: (msg) => (
-                            <a
+                            <ExternalLink
                                 href='https://mattermost.com/mattermost-android-app/'
-                                referrer='noreferrer'
-                                target='_blank'
-                                rel='noreferrer'
+                                location='push_settings'
                             >
                                 {msg}
-                            </a>
+                            </ExternalLink>
                         ),
                         linkHPNS: (msg) => (
-                            <a
-                                href='https://docs.mattermost.com/deploy/mobile-hpns.html]'
-                                referrer='noreferrer'
-                                target='_blank'
-                                rel='noreferrer'
+                            <ExternalLink
+                                href='https://docs.mattermost.com/deploy/mobile-hpns.html'
+                                location='push_settings'
                             >
                                 {msg}
-                            </a>
+                            </ExternalLink>
                         ),
                     }}
                 />
@@ -175,34 +178,28 @@ export default class PushSettings extends AdminSettings {
                     defaultMessage='Download <linkIOS>Mattermost iOS app</linkIOS> from iTunes. Download <linkAndroid>Mattermost Android app</linkAndroid> from Google Play. Learn more about the <linkHPNS>Mattermost Hosted Push Notification Service</linkHPNS>.'
                     values={{
                         linkIOS: (msg) => (
-                            <a
+                            <ExternalLink
                                 href='https://mattermost.com/mattermost-ios-app/'
-                                referrer='noreferrer'
-                                target='_blank'
-                                rel='noreferrer'
+                                location='push_settings'
                             >
                                 {msg}
-                            </a>
+                            </ExternalLink>
                         ),
                         linkAndroid: (msg) => (
-                            <a
+                            <ExternalLink
                                 href='https://mattermost.com/mattermost-android-app/'
-                                referrer='noreferrer'
-                                target='_blank'
-                                rel='noreferrer'
+                                location='push_settings'
                             >
                                 {msg}
-                            </a>
+                            </ExternalLink>
                         ),
                         linkHPNS: (msg) => (
-                            <a
-                                href='https://docs.mattermost.com/deploy/mobile-hpns.html]'
-                                referrer='noreferrer'
-                                target='_blank'
-                                rel='noreferrer'
+                            <ExternalLink
+                                href='https://docs.mattermost.com/deploy/mobile-hpns.html'
+                                location='push_settings'
                             >
                                 {msg}
-                            </a>
+                            </ExternalLink>
                         ),
                     }}
                 />
@@ -214,14 +211,12 @@ export default class PushSettings extends AdminSettings {
                     defaultMessage='Learn more about compiling and deploying your own mobile apps from an <link>Enterprise App Store</link>.'
                     values={{
                         link: (msg) => (
-                            <a
+                            <ExternalLink
                                 href='https://docs.mattermost.com/'
-                                referrer='noreferrer'
-                                target='_blank'
-                                rel='noreferrer'
+                                location='push_settings'
                             >
                                 {msg}
-                            </a>
+                            </ExternalLink>
                         ),
                     }}
                 />
@@ -236,7 +231,6 @@ export default class PushSettings extends AdminSettings {
                     <div className='col-sm-8'>
                         <input
                             type='checkbox'
-                            ref='agree'
                             checked={this.state.agree}
                             onChange={this.handleAgreeChange}
                             disabled={this.props.isDisabled}
@@ -246,24 +240,20 @@ export default class PushSettings extends AdminSettings {
                             defaultMessage=' I understand and accept the Mattermost Hosted Push Notification Service <linkTerms>Terms of Service</linkTerms> and <linkPrivacy>Privacy Policy</linkPrivacy>.'
                             values={{
                                 linkTerms: (msg) => (
-                                    <a
+                                    <ExternalLink
                                         href='https://mattermost.com/hpns-terms/'
-                                        referrer='noreferrer'
-                                        target='_blank'
-                                        rel='noreferrer'
+                                        location='push_settings'
                                     >
                                         {msg}
-                                    </a>
+                                    </ExternalLink>
                                 ),
                                 linkPricacy: (msg) => (
-                                    <a
+                                    <ExternalLink
                                         href='https://mattermost.com/data-processing-addendum/'
-                                        referrer='noreferrer'
-                                        target='_blank'
-                                        rel='noreferrer'
+                                        location='push_settings'
                                     >
                                         {msg}
-                                    </a>
+                                    </ExternalLink>
                                 ),
                             }}
                         />
@@ -330,4 +320,3 @@ export default class PushSettings extends AdminSettings {
         );
     }
 }
-/* eslint-enable react/no-string-refs */

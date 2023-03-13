@@ -3,7 +3,7 @@
 
 import React from 'react';
 import {FormattedMessage} from 'react-intl';
-import {RouteComponentProps} from 'react-router';
+import {RouteComponentProps} from 'react-router-dom';
 
 import {PermissionsScope, ModalIdentifiers} from 'utils/constants';
 import {localizeMessage} from 'utils/utils';
@@ -33,6 +33,8 @@ import {ServerError} from '@mattermost/types/errors';
 import PermissionsTreePlaybooks from '../permissions_tree_playbooks';
 
 import GeneralConstants from 'mattermost-redux/constants/general';
+
+import ExternalLink from 'components/external_link';
 
 import TeamInList from './team_in_list';
 
@@ -69,7 +71,7 @@ type State = {
     } | null;
     teams: Team[] | null;
     addTeamOpen: boolean;
-    selectedPermission: string | null;
+    selectedPermission: string | undefined;
     openRoles: {
         all_users: boolean;
         team_admin: boolean;
@@ -92,7 +94,7 @@ export default class PermissionTeamSchemeSettings extends React.PureComponent<Pr
             roles: null,
             teams: null,
             addTeamOpen: false,
-            selectedPermission: null,
+            selectedPermission: undefined,
             openRoles: {
                 all_users: true,
                 team_admin: true,
@@ -204,7 +206,7 @@ export default class PermissionTeamSchemeSettings extends React.PureComponent<Pr
 
         // Remove selection after animation
         setTimeout(() => {
-            this.setState({selectedPermission: null});
+            this.setState({selectedPermission: undefined});
         }, 3000);
     }
 
@@ -612,22 +614,20 @@ export default class PermissionTeamSchemeSettings extends React.PureComponent<Pr
                                         defaultMessage='<linkTeamOverride>Team Override Schemes</linkTeamOverride> set the permissions for Team Admins, Channel Admins and other members in specific teams. Use a Team Override Scheme when specific teams need permission exceptions to the <linkSystemScheme>System Scheme</linkSystemScheme>.'
                                         values={{
                                             linkTeamOverride: (msg: React.ReactNode) => (
-                                                <a
+                                                <ExternalLink
                                                     href='https://docs.mattermost.com/onboard/advanced-permissions.html'
-                                                    target='_blank'
-                                                    rel='noreferrer'
+                                                    location='permission_team_scheme_settings'
                                                 >
                                                     {msg}
-                                                </a>
+                                                </ExternalLink>
                                             ),
                                             linkSystemScheme: (msg: React.ReactNode) => (
-                                                <a
-                                                    href='https://docs.mattermost.com/onboard/advanced-permissions.htm'
-                                                    target='_blank'
-                                                    rel='noreferrer'
+                                                <ExternalLink
+                                                    href='https://mattermost.com/pl/advanced-permissions/'
+                                                    location='permission_team_scheme_settings'
                                                 >
                                                     {msg}
-                                                </a>
+                                                </ExternalLink>
                                             ),
                                         }}
                                     />
